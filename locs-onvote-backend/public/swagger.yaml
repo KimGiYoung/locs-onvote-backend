@@ -15,7 +15,7 @@ paths:
             parameters:
                 - name : one
                   in : query
-                  description : 이것ㅇㄴ 타입이다
+                  description : 수정
                   required : true
                   schema:
                     type : integer
