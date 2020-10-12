@@ -1,0 +1,224 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "version": "1.0.0",
+        "title": "MY API",
+        "description": "my API"
+    },
+    "servers": [
+        {
+            "description": "My API",
+            "url": "http://211.236.48.213:3000/"
+        }
+    ],
+    "paths": {
+        "/api/users": {
+            "get": {
+                "tags": [
+                    "User"
+                ],
+                "summary": "User API",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "add Result",
+                        "scheam": {
+                            "type": "object",
+                            "$ref": "#/definitions/User"
+                        }
+                    },
+                    "400": {
+                        "description": "Result error",
+                        "scheam": {
+                            "type": "integer"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admin/login": {
+            "get": {
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "관리자 로그인을 위한 api",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "query",
+                        "description": "아이디입니다",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "password",
+                        "in": "query",
+                        "description": "The password for login in clear text",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "add Result",
+                        "scheam": {
+                            "type": "object",
+                            "$ref": "#/definitions/User"
+                        }
+                    },
+                    "400": {
+                        "description": "Result error",
+                        "scheam": {
+                            "type": "integer"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "관리자 로그인을 위한 api",
+                "description": "설명",
+                "operationId": "createUser",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "description": "관리자 계정과 패스워드는 필수",
+                                "properties": {
+                                    "id": {
+                                        "type": "string",
+                                        "description": "관리자 계정"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "description": "관리자 패스워드"
+                                    }
+                                },
+                                "required": [
+                                    "id",
+                                    "password"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "add Result",
+                        "scheam": {
+                            "type": "object",
+                            "$ref": "#/definitions/admin"
+                        }
+                    },
+                    "400": {
+                        "description": "Result error",
+                        "scheam": {
+                            "type": "integer"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admin/option": {
+            "post": {
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "관리자 개인정보 동의 ",
+                "description": "개인정보 동의 확인",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "x-access-token",
+                        "in": "header",
+                        "description": "로그인시 생성되는 토큰",
+                        "required": true
+                    }
+                ],
+                "requestBody": {
+                    "description": "관리자 계정과 패스워드는 필수",
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "option": {
+                                        "type": "int",
+                                        "description": "관리자 계정"
+                                    }
+                                },
+                                "required": [
+                                    "option"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "add Result",
+                        "scheam": {
+                            "type": "object",
+                            "$ref": "#/definitions/admin"
+                        }
+                    },
+                    "400": {
+                        "description": "Result error",
+                        "scheam": {
+                            "type": "integer"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "admin": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "User": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer",
+                    "format": "int"
+                },
+                "password": {
+                    "type": "integer",
+                    "format": "int"
+                }
+            },
+            "xml": {
+                "name": "User"
+            }
+        }
+    }
+}
