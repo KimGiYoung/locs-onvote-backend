@@ -1,11 +1,10 @@
+var cron = require('./config/corn')  // 스케줄러 
 var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var bodyParser = require('body-parser')
-
-
 
 var indexRouter = require('./routes/index');
 
@@ -29,7 +28,7 @@ app.use((request, response, next) => {
   next();
 });
 app.use('/api', indexRouter);
-
+app.use('/uploads', express.static("uploads"));
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

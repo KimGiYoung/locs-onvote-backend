@@ -14,16 +14,15 @@ controller.getTest = async (req, res, next) => {
 }
 controller.isLoginCheck = (req, res, next) => {
   const token = req.headers['x-access-token'];
-  const file = req.file
-  console.log(file)
+  const files = req.files
+
   jwt.verify(token, 'locsadmin_ak', (err, decoded) => {
     if (err) {
       logger.error(err)
       return res.json(Results.onFailure("잘못된 접근입니다"))
     }
     else {
-      console.log(decoded)
-      req.file = file
+      req.files = files
       req.decoded = decoded;
       next();
     }
