@@ -106,6 +106,46 @@ controller.getElection = async (req, res, next) => {
     let result = {}
     result.data = data[0]
     const [vote] = await pool.query('SELECT voter_id FROM vote WHERE election_id = ?', [election])
+    if (vote.length != 0) {
+      const vote_list = vote.map(x => x.voter_id)
+      const [voter] = await pool.query('SELECT COUNT(*) as count FROM voter WHERE id in (?) ', [vote_list])
+      result.voter_count = voter[0].count
+    }
+    else {
+      result.voter_count = 0
+    }
+    result.vote_count = vote.length
+
+    return res.json(Results.onSuccess(result))
+  } catch (error) {
+    logger.error(error)
+    return res.json(Results.onFailure("ERROR"))
+  }
+}
+
+controller.getCandidate = async (req, res, next) => {
+  const { id } = req.decoded
+  const { election } = req.params
+  try {
+
+    const [data] = await pool.query('SELECT candidate.*, voter.username FROM candidate, voter WHERE voter.id = candidate.voter_id AND election_id = ?', [election])
+
+    return res.json(Results.onSuccess(data))
+  } catch (error) {
+    logger.error(error)
+    return res.json(Results.onFailure("ERROR"))
+  }
+}
+controller.setCandidate = async (req, res, next) => {
+  const { id } = req.decoded
+  const { election } = req.params
+  try {
+
+    const [data] = await pool.query('SELECT * FROM election WHERE id = ?', [election])
+
+    let result = {}
+    result.data = data[0]
+    const [vote] = await pool.query('SELECT voter_id FROM vote WHERE election_id = ?', [election])
     const vote_list = vote.map(x => x.voter_id)
     const [voter] = await pool.query('SELECT COUNT(*) as count FROM voter WHERE id in (?) ', [vote_list])
     result.vote_count = vote.length
@@ -117,4 +157,26 @@ controller.getElection = async (req, res, next) => {
   }
 
 }
+
+
+controller.getCandidateList = async (req, res, next) => {
+  const { id } = req.decoded
+  const { election } = req.params
+  const { query } = req.query
+  let strquery = "%"
+  if (query != undefined) {
+    strquery = query + "%"
+  }
+
+  try {
+
+    const [data] = await pool.query('SELECT * FROM vote, voter WHERE voter.id = vote.voter_id AND election_id =? AND username LIKE (?)', [election, strquery])
+
+    return res.json(Results.onSuccess(data))
+  } catch (error) {
+    logger.error(error)
+    return res.json(Results.onFailure("ERROR"))
+  }
+}
+
 module.exports = controller;

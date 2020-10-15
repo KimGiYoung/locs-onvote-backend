@@ -22,9 +22,11 @@ router.get('/short', admin.isLoginCheck, controller.getElectionShortList);  // �
 router.get('/:election', admin.isLoginCheck, controller.getElection);   // 선거 세부정보
 router.post('/:election', memory.single('file'), admin.isLoginCheck, controller.setVoterAdd);   // 유권자 등록(선거 추가랑 합칠예정)
 
-router.get('/:election/candidate', admin.isLoginCheck, controller.getElection);         // 후보자 조회(예정)
+router.get('/:election/candidate', admin.isLoginCheck, controller.getCandidate);         // 후보자 조회
 router.post('/:election/candidate', admin.isLoginCheck, controller.getElection);        // 후보자 등록(예정)
 
+
+router.get('/:election/candidate/list', admin.isLoginCheck, controller.getCandidateList);         // 후보자 검색 리스트(예정)
 
 
 module.exports = router;
