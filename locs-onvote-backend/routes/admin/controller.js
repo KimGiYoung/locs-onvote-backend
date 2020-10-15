@@ -14,12 +14,16 @@ controller.getTest = async (req, res, next) => {
 }
 controller.isLoginCheck = (req, res, next) => {
   const token = req.headers['x-access-token'];
-  jwt.verify(token, 'locslab_ak', (err, decoded) => {
+  const file = req.file
+  console.log(file)
+  jwt.verify(token, 'locsadmin_ak', (err, decoded) => {
     if (err) {
       logger.error(err)
       return res.json(Results.onFailure("잘못된 접근입니다"))
     }
     else {
+      console.log(decoded)
+      req.file = file
       req.decoded = decoded;
       next();
     }
@@ -27,13 +31,15 @@ controller.isLoginCheck = (req, res, next) => {
 }
 controller.istokenCheck = (req, res, next) => {
   const token = req.headers['x-refresh-token'];
-  jwt.verify(token, 'locslab_rk', (err, decoded) => {
+
+  jwt.verify(token, 'locsadmin_rk', (err, decoded) => {
     if (err) {
       logger.error(err)
       return res.json(Results.onFailure("잘못된 접근입니다"))
     }
     else {
       req.decoded = decoded;
+
       next();
     }
   })

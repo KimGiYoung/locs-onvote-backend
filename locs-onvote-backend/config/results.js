@@ -3,15 +3,13 @@ Results.onSuccess = (data) => {
     return {
         success: true,
         message: null,
-        code: null,
         data: data || null
     }
 }
-Results.onFailure = (message, code = 1000) => {
+Results.onFailure = (message) => {
     return {
         success: false,
         message: message || null,
-        code,
         data: null
     }
 }
