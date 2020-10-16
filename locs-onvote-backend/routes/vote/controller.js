@@ -1,6 +1,7 @@
 const pool = require("../../database");
 const logger = require("../../config/logger");
 const Results = require("../../config/results");
+const { nanoid } = require("nanoid");
 let controller = {}
 
 controller.getTest = async (req, res, next) => {
@@ -14,7 +15,8 @@ controller.getballotList = async (req, res, next) => {
   const { id } = req.decoded
   const { election } = req.params
   try {
-    const [data] = await pool.query('SELECT ballot.id, ballot.flag, ballot.days, voter.username, voter.phone FROM ballot, voter WHERE voter.id = ballot.voter_id AND election_id =? ', [election])
+    const [data] = await pool.query('SELECT ballot.id, ballot.flag, ballot.ballotdate, voter.username, voter.phone, voter.birthday FROM ballot, voter WHERE voter.id = ballot.voter_id AND ballot.election_id =? ', [election])
+    console.log(data)
     return res.json(Results.onSuccess(data))
   } catch (error) {
     logger.error(error)
@@ -27,14 +29,15 @@ controller.setballotList = async (req, res, next) => {
   const { election } = req.params
   const { voter_id } = req.body
   try {
-    const [voter] = await pool.query('SELECT * FROM vote WHERE voter_id = ?', [voter_id])
+    console.log(voter_id)
+    const [voter] = await pool.query('SELECT * FROM voter WHERE id = ?', [voter_id])
 
     if (voter.length == 0) {
       return res.json(Results.onFailure("후보자 정보가 없습니다"))
     }
 
-    const [data] = await pool.query('INSERT INTO  ballot(election_id, voter_id, flag) VALUES (?, ?, ?)', [election, voter_id, 0])
-    return res.json(Results.onSuccess(data))
+    const [data] = await pool.query('INSERT INTO  ballot(election_id, voter_id, flag, code) VALUES (?, ?, ?, ?)', [election, voter_id, 0, nanoid(10)])
+    return res.json(Results.onSuccess({ id: data.insertId }))
   } catch (error) {
     logger.error(error)
     return res.json(Results.onFailure("ERROR"))
@@ -89,8 +92,9 @@ controller.getVoteList = async (req, res, next) => {
     const pnTotal = Math.ceil(totleCount / contentSize)
     const pnStart = ((Math.ceil(npageNum / pnSize) - 1) * pnSize) + 1 // NOTE: 현재
     let pnEnd = (pnStart + pnSize) - 1
-    const [data] = await pool.query('SELECT voter.username, voter.days, voter.phone, vote.flag, vote.days FROM vote,voter WHERE election_id = ? AND voter.id  = vote.voter_id ORDER BY voter.id LIMIT ?, ?', [election, skipSize, contentSize])
-    if (pnEnd > pnTotal) pnEnd = pnTotal; // NOTE: 페이지네이션의 끝 번호가 페이지네이션 전체 카운트보다 높을 경우.
+    const [data] = await pool.query('SELECT voter.username,  DATE_FORMAT(voter.days, \'%Y-%m-%d\') as birthday , voter.phone, vote.flag, vote.days FROM vote,voter WHERE election_id = ? AND voter.id  = vote.voter_id ORDER BY voter.id LIMIT ?, ?', [election, skipSize, contentSize])
+    if (pnEnd > pnTotal) pnEnd = pnTotal
+    console.log(data)
     const result = {
       pageNum,
       pnStart,

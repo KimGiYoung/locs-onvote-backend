@@ -44,58 +44,15 @@ controller.istokenCheck = (req, res, next) => {
   })
 }
 
-controller.AdminLogin = async (req, res, next) => {
-  const { id, password } = req.query;
-  const sha1 = crypto.createHash('sha1').update(password).digest("hex")
-  try {
-    console.log(id, password)
-    const data = await pool.query('select * from admin where username = ? and password = ?', [id, sha1])
-    console.log(data[0].length)
-    if (data[0].length === 0) {
-      return res.json("아이디나 패스워드가 틀렸습니다.")
-    }
-    const user = data[0][0]
-    console.log(user.option)
-    const date = new Date()
-    console.log(date)
-    if (user.enddate < date) {
-      return res.json(Results.onFailure("기간이 만료되었습니다"))
-    }
-    const payload = {
-      id: user.id,
-      username: user.username,
-      enddate: user.enddate
-    }
-
-    const access_token = jwt.sign(payload, "locslab_ak", { expiresIn: '15d' })
-    const refresh_token = jwt.sign(payload, "locslab_rk", { expiresIn: '365d' })
-    const result = {
-      username: user.username,
-      option: user.option,
-      ak: access_token,
-      rk: refresh_token
-    }
-
-    return res.json(Results.onSuccess(result))
-
-
-  } catch (e) {
-    logger.error(e)
-    return res.json("잘못된 접근")
-  }
-}
-
-
 controller.getAdminLogin = async (req, res, next) => {
   const { id, password } = req.body;
-  console.log(req.body)
-  const sha1 = crypto.createHash('sha1').update(password).digest("hex")
+
   try {
     console.log(id, password)
-    const data = await pool.query('select * from admin where username = ? and password = ?', [id, sha1])
+    const data = await pool.query('select * from admin where username = ? and password = ?', [id, password])
     console.log(data[0].length)
     if (data[0].length === 0) {
-      return res.json("아이디나 패스워드가 틀렸습니다.")
+      return res.json(Results.onFailure("아이디나 패스워드가 틀렸습니다."))
     }
     const user = data[0][0]
     console.log(user.option)
@@ -114,7 +71,7 @@ controller.getAdminLogin = async (req, res, next) => {
     const refresh_token = jwt.sign(payload, "locsadmin_rk", { expiresIn: '365d' })
     const result = {
       username: user.username,
-      option: user.option,
+      option: user.noption,
       ak: access_token,
       rk: refresh_token
     }
@@ -124,16 +81,16 @@ controller.getAdminLogin = async (req, res, next) => {
 
   } catch (e) {
     logger.error(e)
-    return res.json("잘못된 접근")
+    return res.json(Results.onFailure("에러"))
   }
 }
 controller.putAdminOption = async (req, res, next) => {
   const { id } = req.decoded
-  const { option } = req.body;
+  // const { option } = req.body;
   try {
-    const data = await pool.query('update admin set noption = ? where id = ?', [option, id])
-    console.log(data[0])
-    return res.json(Results.onSuccess(1))
+    const [data] = await pool.query('update admin set noption = 1 where id = ?', [id])
+    console.log(data)
+    return res.json(Results.onSuccess({ id: data.insertId }))
   } catch (e) {
     logger.error(e)
     return res.json(Results.onFailure("ERROR"))

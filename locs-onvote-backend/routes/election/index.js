@@ -47,15 +47,23 @@ var router = express.Router();
 
 /* GET users listing. */
 router.get('/', controller.getTest);
+router.get('/example', admin.isLoginCheck, controller.getExampleDownload);      // 샘플명부 다운로드
+router.get('/voter/:election', admin.isLoginCheck, controller.getVoterDownload);        // 선거명부 다운로드
+
 router.get('/list', admin.isLoginCheck, controller.getElectionList);    // 선거 리스트
-router.post('/list', admin.isLoginCheck, controller.setElectionList);   // 선거 추가
+router.post('/list', memory.array('file', 1), admin.isLoginCheck, controller.setElectionList);   // 선거 추가
+router.put('/list', memory.array('file', 1), admin.isLoginCheck, controller.putElectionList);   // 선거 수정
+router.delete('/list', admin.isLoginCheck, controller.deleteElectionList);    // 선거 삭제
+
+
 router.get('/short', admin.isLoginCheck, controller.getElectionShortList);  // 선거 간략한 정보 리스트
 
 router.get('/:election', admin.isLoginCheck, controller.getElection);   // 선거 세부정보
-router.post('/:election', memory.array('file', 1), admin.isLoginCheck, controller.setVoterAdd);   // 선거 명부 등록(선거 추가랑 합칠예정)
 
 router.get('/:election/candidate', admin.isLoginCheck, controller.getCandidate);         // 후보자 조회
 router.post('/:election/candidate', upload.fields([{ name: 'img', maxCount: 1 }, { name: 'pdf', maxCount: 1 }]), admin.isLoginCheck, controller.setCandidate);        // 후보자 등록(예정)
+router.get('/candidate/:candidate', admin.isLoginCheck, controller.getDetailsCandidate);         // 후보자 상세조회
+router.put('/candidate/:candidate', upload.fields([{ name: 'img', maxCount: 1 }, { name: 'pdf', maxCount: 1 }]), admin.isLoginCheck, controller.putCandidate);        // 후보자 등록(예정)
 
 
 router.get('/:election/candidate/list', admin.isLoginCheck, controller.getCandidateList);         // 후보자 검색 리스트

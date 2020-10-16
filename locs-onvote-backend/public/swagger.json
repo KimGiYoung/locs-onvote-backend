@@ -156,25 +156,91 @@
                         "required": true
                     }
                 ],
-                "requestBody": {
-                    "description": "관리자 계정과 패스워드는 필수",
-                    "content": {
-                        "application/x-www-form-urlencoded": {
-                            "schema": {
-                                "type": "object",
-                                "properties": {
-                                    "option": {
-                                        "type": "int",
-                                        "description": "관리자 계정"
-                                    }
-                                },
-                                "required": [
-                                    "option"
-                                ]
-                            }
+                "requestBody": {},
+                "responses": {
+                    "200": {
+                        "description": "add Result",
+                        "scheam": {
+                            "type": "object",
+                            "$ref": "#/definitions/admin"
+                        }
+                    },
+                    "400": {
+                        "description": "Result error",
+                        "scheam": {
+                            "type": "integer"
                         }
                     }
-                },
+                }
+            }
+        },
+        "/api/election/example": {
+            "get": {
+                "tags": [
+                    "Election"
+                ],
+                "summary": "선거 샘플 명부 다운로드 ",
+                "description": "선거 샘플 명부 다운로드",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "x-access-token",
+                        "in": "header",
+                        "description": "로그인시 생성되는 토큰",
+                        "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVuZGRhdGUiOiIyMDIwLTEwLTE0VDA3OjI4OjAwLjAwMFoiLCJpYXQiOjE2MDI1NzE5OTEsImV4cCI6MTYwMzg2Nzk5MX0.C-MRpF8WurIzDrSbKemoUY6OKZ4epno7GxuMWbVrL9o",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "add Result",
+                        "scheam": {
+                            "type": "object",
+                            "$ref": "#/definitions/admin"
+                        }
+                    },
+                    "400": {
+                        "description": "Result error",
+                        "scheam": {
+                            "type": "integer"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/election/voter/:election": {
+            "get": {
+                "tags": [
+                    "Election"
+                ],
+                "summary": "선거 명부 다운로드 ",
+                "description": "선거 명부 다운로드",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "x-access-token",
+                        "in": "header",
+                        "description": "로그인시 생성되는 토큰",
+                        "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVuZGRhdGUiOiIyMDIwLTEwLTE0VDA3OjI4OjAwLjAwMFoiLCJpYXQiOjE2MDI1NzE5OTEsImV4cCI6MTYwMzg2Nzk5MX0.C-MRpF8WurIzDrSbKemoUY6OKZ4epno7GxuMWbVrL9o",
+                        "required": true
+                    },
+                    {
+                        "name": "election",
+                        "in": "path",
+                        "description": "선거 index",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "add Result",
@@ -210,15 +276,19 @@
                         "name": "x-access-token",
                         "in": "header",
                         "description": "로그인시 생성되는 토큰",
+                        "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVuZGRhdGUiOiIyMDIwLTEwLTE0VDA3OjI4OjAwLjAwMFoiLCJpYXQiOjE2MDI1NzE5OTEsImV4cCI6MTYwMzg2Nzk5MX0.C-MRpF8WurIzDrSbKemoUY6OKZ4epno7GxuMWbVrL9o",
                         "required": true
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "add Result",
-                        "scheam": {
-                            "type": "object",
-                            "$ref": "#/definitions/admin"
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/election"
+                                }
+                            }
                         }
                     },
                     "400": {
@@ -252,12 +322,11 @@
                 ],
                 "requestBody": {
                     "content": {
-                        "application/x-www-form-urlencoded": {
+                        "multipart/form-data": {
                             "schema": {
                                 "type": "object",
-                                "description": "관리자 계정과 패스워드는 필수",
                                 "properties": {
-                                    "comment": {
+                                    "name": {
                                         "type": "string",
                                         "description": "선거 내용",
                                         "example": "와우"
@@ -283,10 +352,110 @@
                                         "example": "2020-01-02 15:00:00",
                                         "description": "끝 미리보기"
                                     },
-                                    "flag": {
+                                    "option": {
                                         "type": "int",
                                         "example": "0",
-                                        "description": "진행여부 (0 : 대기, 1:시작, 2 : 완료)"
+                                        "description": "단일 다중(0 : 단일, 1:다중)"
+                                    },
+                                    "extension": {
+                                        "type": "int",
+                                        "example": "0",
+                                        "description": "연장 여부"
+                                    },
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary",
+                                        "required": true
+                                    }
+                                },
+                                "required": [
+                                    "name",
+                                    "start_dt",
+                                    "end_dt",
+                                    "start_preview",
+                                    "end_preview",
+                                    "option",
+                                    "extension",
+                                    "file"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "add Result",
+                        "scheam": {
+                            "type": "object",
+                            "$ref": "#/definitions/admin"
+                        }
+                    },
+                    "400": {
+                        "description": "Result error",
+                        "scheam": {
+                            "type": "integer"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Election"
+                ],
+                "summary": "선거 수정",
+                "description": "선거 수정",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "x-access-token",
+                        "in": "header",
+                        "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVuZGRhdGUiOiIyMDIwLTEwLTE0VDA3OjI4OjAwLjAwMFoiLCJpYXQiOjE2MDI1NzE5OTEsImV4cCI6MTYwMzg2Nzk5MX0.C-MRpF8WurIzDrSbKemoUY6OKZ4epno7GxuMWbVrL9o",
+                        "description": "로그인시 생성되는 토큰",
+                        "required": true
+                    }
+                ],
+                "requestBody": {
+                    "description": "선거 인덱스는 필수",
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "index": {
+                                        "type": "int",
+                                        "description": "선거 인덱스",
+                                        "example": 1
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "description": "선거 내용",
+                                        "example": "와우"
+                                    },
+                                    "start_dt": {
+                                        "type": "datetime",
+                                        "description": "시작날짜",
+                                        "example": "2020-01-02 15:00:00",
+                                        "format": "date-time"
+                                    },
+                                    "end_dt": {
+                                        "type": "datetime",
+                                        "example": "2020-01-02 15:00:00",
+                                        "description": "끝날짜"
+                                    },
+                                    "start_preview": {
+                                        "type": "datetime",
+                                        "example": "2020-01-02 15:00:00",
+                                        "description": "시작 미리보기"
+                                    },
+                                    "end_preview": {
+                                        "type": "datetime",
+                                        "example": "2020-01-02 15:00:00",
+                                        "description": "끝 미리보기"
                                     },
                                     "option": {
                                         "type": "int",
@@ -297,22 +466,63 @@
                                         "type": "int",
                                         "example": "0",
                                         "description": "연장 여부"
+                                    },
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary",
+                                        "required": true
                                     }
                                 },
                                 "required": [
-                                    "comment",
-                                    "start_dt",
-                                    "end_dt",
-                                    "start_preview",
-                                    "end_preview",
-                                    "flag",
-                                    "option",
-                                    "extension"
+                                    "index"
                                 ]
                             }
                         }
                     }
                 },
+                "responses": {
+                    "200": {
+                        "description": "add Result",
+                        "scheam": {
+                            "type": "object",
+                            "$ref": "#/definitions/admin"
+                        }
+                    },
+                    "400": {
+                        "description": "Result error",
+                        "scheam": {
+                            "type": "integer"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Election"
+                ],
+                "summary": "선거 리스트 ",
+                "description": "선거 리스트",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "x-access-token",
+                        "in": "header",
+                        "description": "로그인시 생성되는 토큰",
+                        "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVuZGRhdGUiOiIyMDIwLTEwLTE0VDA3OjI4OjAwLjAwMFoiLCJpYXQiOjE2MDI1NzE5OTEsImV4cCI6MTYwMzg2Nzk5MX0.C-MRpF8WurIzDrSbKemoUY6OKZ4epno7GxuMWbVrL9o",
+                        "required": true
+                    },
+                    {
+                        "name": "index",
+                        "in": "query",
+                        "description": "선거 인덱스",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "add Result",
@@ -376,70 +586,6 @@
                         }
                     }
                 }
-            },
-            "post": {
-                "tags": [
-                    "Election"
-                ],
-                "summary": "선거 명부 생성",
-                "description": "선거 명부 생성",
-                "operationId": "uploadFile",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "parameters": [
-                    {
-                        "name": "x-access-token",
-                        "in": "header",
-                        "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVuZGRhdGUiOiIyMDIwLTEwLTE0VDA3OjI4OjAwLjAwMFoiLCJpYXQiOjE2MDI1NzE5OTEsImV4cCI6MTYwMzg2Nzk5MX0.C-MRpF8WurIzDrSbKemoUY6OKZ4epno7GxuMWbVrL9o",
-                        "description": "로그인시 생성되는 토큰",
-                        "required": true
-                    },
-                    {
-                        "name": "election",
-                        "in": "path",
-                        "description": "선거 인덱스",
-                        "required": true,
-                        "type": "integer",
-                        "format": "int64"
-                    }
-                ],
-                "requestBody": {
-                    "content": {
-                        "multipart/form-data": {
-                            "schema": {
-                                "type": "object",
-                                "description": "관리자 계정과 패스워드는 필수",
-                                "properties": {
-                                    "file": {
-                                        "type": "string",
-                                        "format": "binary",
-                                        "required": true
-                                    }
-                                },
-                                "required": []
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "add Result",
-                        "scheam": {
-                            "type": "object",
-                            "$ref": "#/definitions/admin"
-                        }
-                    },
-                    "400": {
-                        "description": "Result error",
-                        "scheam": {
-                            "type": "integer"
-                        }
-                    }
-                }
             }
         },
         "/api/election/short": {
@@ -461,6 +607,13 @@
                         "in": "header",
                         "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVuZGRhdGUiOiIyMDIwLTEwLTE0VDA3OjI4OjAwLjAwMFoiLCJpYXQiOjE2MDI1NzE5OTEsImV4cCI6MTYwMzg2Nzk5MX0.C-MRpF8WurIzDrSbKemoUY6OKZ4epno7GxuMWbVrL9o",
                         "description": "로그인시 생성되는 토큰",
+                        "required": true
+                    },
+                    {
+                        "name": "flag",
+                        "in": "query",
+                        "example": "0, 1",
+                        "description": "(0:대기 , 1:진행) 0,1 or 0",
                         "required": true
                     }
                 ],
@@ -625,6 +778,195 @@
                 }
             }
         },
+        "/api/election/candidate/{candidate}": {
+            "get": {
+                "tags": [
+                    "Election"
+                ],
+                "summary": "후보자 상세 조회",
+                "description": "후보자 상세 조회",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "x-access-token",
+                        "in": "header",
+                        "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVuZGRhdGUiOiIyMDIwLTEwLTE0VDA3OjI4OjAwLjAwMFoiLCJpYXQiOjE2MDI1NzE5OTEsImV4cCI6MTYwMzg2Nzk5MX0.C-MRpF8WurIzDrSbKemoUY6OKZ4epno7GxuMWbVrL9o",
+                        "description": "로그인시 생성되는 토큰",
+                        "required": true
+                    },
+                    {
+                        "name": "candidate",
+                        "in": "path",
+                        "description": "후보자 인덱스",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "requestBody": {},
+                "responses": {
+                    "200": {
+                        "description": "add Result",
+                        "scheam": {
+                            "type": "object",
+                            "$ref": "#/definitions/admin"
+                        }
+                    },
+                    "400": {
+                        "description": "Result error",
+                        "scheam": {
+                            "type": "integer"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Election"
+                ],
+                "summary": "후보자 수정",
+                "description": "후보자 수정",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "x-access-token",
+                        "in": "header",
+                        "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVuZGRhdGUiOiIyMDIwLTEwLTE0VDA3OjI4OjAwLjAwMFoiLCJpYXQiOjE2MDI1NzE5OTEsImV4cCI6MTYwMzg2Nzk5MX0.C-MRpF8WurIzDrSbKemoUY6OKZ4epno7GxuMWbVrL9o",
+                        "description": "로그인시 생성되는 토큰",
+                        "required": true
+                    },
+                    {
+                        "name": "candidate",
+                        "in": "path",
+                        "description": "후보자 인덱스",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "requestBody": {
+                    "description": "유권자 인덱스는 필수",
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "voter_id": {
+                                        "type": "int",
+                                        "format": "int",
+                                        "description": "유권자 인덱스"
+                                    },
+                                    "symbole": {
+                                        "type": "string",
+                                        "format": "string",
+                                        "description": "기호"
+                                    },
+                                    "team": {
+                                        "type": "string",
+                                        "format": "string",
+                                        "description": "팀명"
+                                    },
+                                    "pledge": {
+                                        "type": "string",
+                                        "format": "string",
+                                        "description": "공약사항"
+                                    },
+                                    "youtube": {
+                                        "type": "string",
+                                        "format": "string",
+                                        "description": "유튜브 주소"
+                                    },
+                                    "img": {
+                                        "type": "string",
+                                        "format": "binary",
+                                        "description": "이미지 사진"
+                                    },
+                                    "pdf": {
+                                        "type": "string",
+                                        "format": "binary",
+                                        "description": "PDF 파일"
+                                    }
+                                },
+                                "required": [
+                                    "voter_id"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "add Result",
+                        "scheam": {
+                            "type": "object",
+                            "$ref": "#/definitions/admin"
+                        }
+                    },
+                    "400": {
+                        "description": "Result error",
+                        "scheam": {
+                            "type": "integer"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Election"
+                ],
+                "summary": "후보자 삭제",
+                "description": "후보자 삭제",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "x-access-token",
+                        "in": "header",
+                        "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVuZGRhdGUiOiIyMDIwLTEwLTE0VDA3OjI4OjAwLjAwMFoiLCJpYXQiOjE2MDI1NzE5OTEsImV4cCI6MTYwMzg2Nzk5MX0.C-MRpF8WurIzDrSbKemoUY6OKZ4epno7GxuMWbVrL9o",
+                        "description": "로그인시 생성되는 토큰",
+                        "required": true
+                    },
+                    {
+                        "name": "candidate",
+                        "in": "path",
+                        "description": "후보자 인덱스",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "requestBody": {},
+                "responses": {
+                    "200": {
+                        "description": "add Result",
+                        "scheam": {
+                            "type": "object",
+                            "$ref": "#/definitions/admin"
+                        }
+                    },
+                    "400": {
+                        "description": "Result error",
+                        "scheam": {
+                            "type": "integer"
+                        }
+                    }
+                }
+            }
+        },
         "/api/election/{election}/candidate/list": {
             "get": {
                 "tags": [
@@ -715,9 +1057,12 @@
                 "responses": {
                     "200": {
                         "description": "add Result",
-                        "scheam": {
-                            "type": "object",
-                            "$ref": "#/definitions/admin"
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ballot"
+                                }
+                            }
                         }
                     },
                     "400": {
@@ -760,7 +1105,7 @@
                 "requestBody": {
                     "description": "유권자 인덱스는 필수",
                     "content": {
-                        "multipart/form-data": {
+                        "application/x-www-form-urlencoded": {
                             "schema": {
                                 "type": "object",
                                 "properties": {
@@ -876,7 +1221,7 @@
                         "in": "query",
                         "description": "시작날짜",
                         "required": false,
-                        "type": "datetime",
+                        "type": "string",
                         "format": "date-time",
                         "example": "2020-01-02 15:00:00"
                     },
@@ -885,7 +1230,7 @@
                         "in": "query",
                         "description": "끝날짜",
                         "required": false,
-                        "type": "datetime",
+                        "type": "string",
                         "format": "date-time",
                         "example": "2020-01-02 15:00:00"
                     }
@@ -909,32 +1254,170 @@
             }
         }
     },
-    "definitions": {
-        "admin": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string"
+    "components": {
+        "schemas": {
+            "GeneralError": {
+                "type": "object",
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "format": "boolean"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/election"
+                        }
+                    }
+                }
+            },
+            "election": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "description": "선거인덱스"
+                    },
+                    "admin_id": {
+                        "type": "integer",
+                        "description": "관리자 인덱스"
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "선거명"
+                    },
+                    "create_dt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "선거 생성일"
+                    },
+                    "start_dt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "선거 시작 시간"
+                    },
+                    "end_dt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "선거 끝나는 시간"
+                    },
+                    "start_preview": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "선거 미리보기 시작 시간"
+                    },
+                    "end_preview": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "선거 미리보기 끝나는 시간"
+                    },
+                    "flag": {
+                        "type": "integer",
+                        "description": "선거진행 여부( 0: 대기, 1:진행, 2:완료, 3:무효)"
+                    },
+                    "noption": {
+                        "type": "integer",
+                        "description": "선거구분( 0 : 단일, 1: 다중 )"
+                    },
+                    "extension": {
+                        "type": "integer",
+                        "description": "연장여부 (0 : 연장불가능, 1 : 연장가능)"
+                    }
+                }
+            },
+            "ballot": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "description": "개표자 인덱스"
+                    },
+                    "flag": {
+                        "type": "integer",
+                        "description": "개표자 확인(0 : 미개표, 1 : 개표)"
+                    },
+                    "balllotdate": {
+                        "type": "string",
+                        "description": "개표자 확인 날짜"
+                    },
+                    "username": {
+                        "type": "string",
+                        "format": "string",
+                        "description": "개표확인자 이름"
+                    },
+                    "phone": {
+                        "type": "string",
+                        "format": "string",
+                        "description": "핸드폰"
+                    },
+                    "birthday": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "생년월일"
+                    }
                 }
             }
         },
-        "User": {
-            "type": "object",
-            "properties": {
-                "id": {
+        "parameters": {
+            "skipParam": {
+                "name": "skip",
+                "in": "query",
+                "description": "number of items to skip",
+                "required": true,
+                "schema": {
                     "type": "integer",
-                    "format": "int"
-                },
-                "password": {
-                    "type": "integer",
-                    "format": "int"
+                    "format": "int32"
                 }
             },
-            "xml": {
-                "name": "User"
+            "limitParam": {
+                "name": "limit",
+                "in": "query",
+                "description": "max records to return",
+                "required": true,
+                "schema": {
+                    "type": "integer",
+                    "format": "int32"
+                }
+            }
+        },
+        "responses": {
+            "NotFound": {
+                "description": "Entity not found."
+            },
+            "IllegalInput": {
+                "description": "Illegal input for operation."
+            },
+            "GeneralError": {
+                "description": "General Error",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/GeneralError"
+                        }
+                    }
+                }
+            }
+        },
+        "securitySchemes": {
+            "api_key": {
+                "type": "apiKey",
+                "name": "api_key",
+                "in": "header"
+            },
+            "petstore_auth": {
+                "type": "oauth2",
+                "flows": {
+                    "implicit": {
+                        "authorizationUrl": "http://example.org/api/oauth/dialog",
+                        "scopes": {
+                            "write:pets": "modify pets in your account",
+                            "read:pets": "read your pets"
+                        }
+                    }
+                }
             }
         }
     }
