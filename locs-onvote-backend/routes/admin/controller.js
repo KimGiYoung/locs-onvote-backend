@@ -9,7 +9,6 @@ let controller = {}
 
 controller.getTest = async (req, res, next) => {
   const data = await pool.query('select * from admin limit 1')
-  console.log(data[0])
   return res.json(data[0])
 }
 controller.isLoginCheck = (req, res, next) => {
@@ -48,16 +47,17 @@ controller.getAdminLogin = async (req, res, next) => {
   const { id, password } = req.body;
 
   try {
-    console.log(id, password)
+
     const data = await pool.query('select * from admin where username = ? and password = ?', [id, password])
-    console.log(data[0].length)
+
     if (data[0].length === 0) {
-      return res.json(Results.onFailure("아이디나 패스워드가 틀렸습니다."))
+      return res.json(Results.onFailure("아이디나 패스워드가 틀렸습니다"))
+      // return res.status(400).json(Results.onFailure("아이디나 패스워드가 틀렸습니다."))
     }
     const user = data[0][0]
-    console.log(user.option)
+
     const date = new Date()
-    console.log(date)
+
     if (user.enddate < date) {
       return res.json(Results.onFailure("기간이 만료되었습니다"))
     }
@@ -89,7 +89,7 @@ controller.putAdminOption = async (req, res, next) => {
   // const { option } = req.body;
   try {
     const [data] = await pool.query('update admin set noption = 1 where id = ?', [id])
-    console.log(data)
+
     return res.json(Results.onSuccess({ id: data.insertId }))
   } catch (e) {
     logger.error(e)

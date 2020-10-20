@@ -5,4 +5,5 @@ module.exports = {
     password: 'locslab',
     connectionLimit: 10,
     database: 'onvote'
+    // timezone: 'Asia/Seoul'
 };

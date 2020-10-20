@@ -63,7 +63,8 @@ router.get('/:election', admin.isLoginCheck, controller.getElection);   // 선�
 router.get('/:election/candidate', admin.isLoginCheck, controller.getCandidate);         // 후보자 조회
 router.post('/:election/candidate', upload.fields([{ name: 'img', maxCount: 1 }, { name: 'pdf', maxCount: 1 }]), admin.isLoginCheck, controller.setCandidate);        // 후보자 등록(예정)
 router.get('/candidate/:candidate', admin.isLoginCheck, controller.getDetailsCandidate);         // 후보자 상세조회
-router.put('/candidate/:candidate', upload.fields([{ name: 'img', maxCount: 1 }, { name: 'pdf', maxCount: 1 }]), admin.isLoginCheck, controller.putCandidate);        // 후보자 등록(예정)
+router.put('/candidate/:candidate', upload.fields([{ name: 'img', maxCount: 1 }, { name: 'pdf', maxCount: 1 }]), admin.isLoginCheck, controller.putCandidate);        // 후보자 변경
+router.delete('/candidate/:candidate', admin.isLoginCheck, controller.deleteCandidate)
 
 
 router.get('/:election/candidate/list', admin.isLoginCheck, controller.getCandidateList);         // 후보자 검색 리스트

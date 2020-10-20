@@ -8,8 +8,13 @@ router.get('/', controller.getTest);
 router.get('/:election/ballot', admin.isLoginCheck, controller.getballotList)           // 개표확인자 리스트 조회
 router.post('/:election/ballot', admin.isLoginCheck, controller.setballotList)          // 개표확인자 추가
 router.delete('/:election/ballot/:ballot', admin.isLoginCheck, controller.deleteballotList)    // 개표확인자 삭제
+router.get('/:election/ballot/:ballot', admin.isLoginCheck, controller.getDetailballot)    // 개표확인자 
 
 router.get('/list', admin.isLoginCheck, controller.getElectionList) // 선거 진행리스트 
 
-router.get('/:election/list', admin.isLoginCheck, controller.getVoteList)           // 투표 현황(임시)
+router.get('/:election/list', admin.isLoginCheck, controller.getVoteList)           // 투표 현황
+
+
+router.put('/invalid', admin.isLoginCheck, controller.putElectionInvalid)          // 투표 무효
+router.put('/date', admin.isLoginCheck, controller.putElectionAddDate)          // 투표 연장
 module.exports = router;
