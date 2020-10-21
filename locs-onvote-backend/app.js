@@ -25,7 +25,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use((request, response, next) => {
   response.header("Access-Control-Allow-Origin", "*");
   response.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-  response.header("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE");
+  response.header("Access-Control-Allow-Methods", "POST, GET, PUT, DELETE");
 
 
   next();

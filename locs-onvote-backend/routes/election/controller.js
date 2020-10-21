@@ -82,13 +82,17 @@ controller.getElectionShortList = async (req, res, next) => {
 controller.setElectionList = async (req, res, next) => {
   const { id } = req.decoded
   const { name, start_dt, end_dt, start_preview, end_preview, option, extension } = req.body
+  const tStart_dt = new Date(start_dt).toLocaleString('ko-KR', { hour12: false })
+  const tEnd_dt = new Date(end_dt).toLocaleString('ko-KR', { hour12: false })
+  const tStart_preview = new Date(start_preview).toLocaleString('ko-KR', { hour12: false })
+  const tEnd_preview = new Date(end_preview).toLocaleString('ko-KR', { hour12: false })
 
   const [file] = req.files
   let connection = await pool.getConnection(async conn => conn)
   try {
 
     connection.beginTransaction(); // START TRANSACTION
-    const [data] = await connection.query('INSERT INTO election(admin_id, name, start_dt, end_dt, start_preview, end_preview, flag, noption, extension) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [id, name, new Date(start_dt), new Date(end_dt), new Date(start_preview), new Date(end_preview), 0, option, extension])
+    const [data] = await connection.query('INSERT INTO election(admin_id, name, start_dt, end_dt, start_preview, end_preview, flag, noption, extension) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [id, name, tStart_dt, tEnd_dt, tStart_preview, tEnd_preview, 0, option, extension])
     const election = data.insertId
     const excelFile = xlsx.read(file.buffer)
     // @breif 엑셀 파일의 첫번째 시트의 정보를 추출
@@ -120,6 +124,12 @@ controller.setElectionList = async (req, res, next) => {
 controller.putElectionList = async (req, res, next) => {
   const { id } = req.decoded
   const { index, name, start_dt, end_dt, start_preview, end_preview, option, extension } = req.body
+  const tStart_dt = new Date(start_dt).toLocaleString('ko-KR', { hour12: false })
+  const tEnd_dt = new Date(end_dt).toLocaleString('ko-KR', { hour12: false })
+  const tStart_preview = new Date(start_preview).toLocaleString('ko-KR', { hour12: false })
+  const tEnd_preview = new Date(end_preview).toLocaleString('ko-KR', { hour12: false })
+  console.log(tStart_dt, tEnd_dt, tStart_preview, tEnd_preview)
+
   const file = req.files
   let connection = await pool.getConnection(async conn => conn)
   try {
@@ -129,7 +139,7 @@ controller.putElectionList = async (req, res, next) => {
     if (check.flag == 1) return res.json(Results.onFailure("현재 진행중입니다."))
 
     connection.beginTransaction(); // START TRANSACTION
-    await connection.query('UPDATE election SET name=?, start_dt=?, end_dt=?, start_preview=?, end_preview=?, noption=?, extension=?  WHERE admin_id=? AND id=?', [name, new Date(start_dt), new Date(end_dt), new Date(start_preview), new Date(end_preview), option, extension, id, index])
+    await connection.query('UPDATE election SET name=?, start_dt=?, end_dt=?, start_preview=?, end_preview=?, noption=?, extension=?  WHERE admin_id=? AND id=?', [name, tStart_dt, tEnd_dt, tStart_preview, tEnd_preview, option, extension, id, index])
     const election = index
 
     if (file != undefined && file.length != 0) {
@@ -152,6 +162,8 @@ controller.putElectionList = async (req, res, next) => {
       connection.release()
       return res.json(Results.onSuccess(data1.affectedRows))
     }
+    connection.commit()
+    connection.release()
     return res.json(Results.onSuccess(1))
 
   } catch (error) {
@@ -324,8 +336,6 @@ controller.putCandidate = async (req, res, next) => {
     if (data.noption == 0) //단일
     {
       const [data] = await connection.query('UPDATE candidate set voter_id=?, team=?, pledge=?,pdf_path=?, img_path=?, youtube_path=?, WHERE election_id = ?', [voter_id, team, pledge, , pdf_path, img_path, youtube, election])
-
-
     }
     else {
       const [data] = await connection.query('UPDATE candidate set voter_id=?, symbol=?, team=?, pledge=?, pdf_path=?, img_path=?, youtube_path=? WHERE id = ?', [voter_id, symbol, team, pledge, pdf_path, img_path, youtube, candidate])
@@ -338,6 +348,7 @@ controller.putCandidate = async (req, res, next) => {
 
       let [[check]] = await connection.query('SELECT count(*) as count FROM candidate WHERE election_id = ? AND symbol = ?', [election, symbol])
       if (check.count >= 1) {
+        connection.rollback()
         return res.json(Results.onFailure("동일한 기호명이 있습니다"))
       }
     }

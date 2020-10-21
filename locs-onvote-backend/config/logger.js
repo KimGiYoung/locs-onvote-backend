@@ -19,7 +19,11 @@ const options = {
         colorize: true,
         format: combine(
             label({ label: 'express_server' }),
-            timestamp(),
+            timestamp(
+                {
+                    format: 'YYYY-MM-DD HH:mm:ss',
+                }
+            ),
             myFormat
         )
     }

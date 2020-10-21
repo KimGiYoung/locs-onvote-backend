@@ -81,10 +81,10 @@ controller.getDetailballot = async (req, res, next) => {
   const { id } = req.decoded
   const { election, ballot } = req.params
   try {
-    let [[data]] = await pool.query('SELECT * FROM ballot, election WHERE ballot.election_id = ? AND ballot.election_id = election.id AND ballot.id = ?', [election, ballot])
+    let [[data]] = await pool.query('SELECT ballot.*, election.*, voter.username FROM ballot, election,voter WHERE ballot.election_id = ? AND ballot.election_id = election.id AND ballot.id = ? AND election.id= voter.election_id  AND ballot.voter_id = voter.id ', [election, ballot])
     if (data == undefined) return res.json(Results.onFailure("잘못된 권한입니다."))
-    const [[voter]] = await pool.query('SELECT username FROM voter WHERE id = ?', [data.voter_id])
-    data.username = voter.username
+    //const [[voter]] = await pool.query('SELECT username FROM voter WHERE id = ?', [data.voter_id])
+    //data.username = voter.username
 
     return res.json(Results.onSuccess(data))
   } catch (error) {
@@ -121,13 +121,13 @@ controller.getVoteList = async (req, res, next) => {
 
   try {
     const [[vote]] = await pool.query('SELECT count(*) as count FROM voter WHERE election_id = ?', [election])
-    const totleCount = Number(vote.count)
+    const totalCount = Number(vote.count)
 
     const [data] = await pool.query('SELECT * FROM voter WHERE election_id = ? ORDER BY id LIMIT ?, ?', [election, skipSize, nlimit])
 
     const result = {
       pageNum,
-      totleCount,
+      totalCount,
       contents: data,
     }
     return res.json(Results.onSuccess(result))
@@ -180,6 +180,8 @@ controller.putElectionAddDate = async (req, res, next) => {
   const { election, end } = req.body
   const electionlist = election.split(',')
   let connection = await pool.getConnection(async conn => conn)
+  const tEnd = new Date(end).toLocaleString('ko-KR', { hour12: false })
+
   try {
     connection.beginTransaction()
 
@@ -189,7 +191,7 @@ controller.putElectionAddDate = async (req, res, next) => {
         console.log("선거 연장수 없습니다")
         return 1
       }
-      await connection.query('UPDATE election SET end_dt = ? WHERE id = ?', [end, data])
+      await connection.query('UPDATE election SET end_dt = ? WHERE id = ?', [tEnd, data])
       return 0
     })
 

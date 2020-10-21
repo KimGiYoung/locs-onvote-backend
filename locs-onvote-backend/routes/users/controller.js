@@ -42,15 +42,49 @@ controller.istokenCheck = (req, res, next) => {
 }
 
 
+controller.isBallotLoginCheck = (req, res, next) => {
+  const token = req.headers['x-access-token'];
+  const files = req.files
+
+  jwt.verify(token, 'locsballot_ak', (err, decoded) => {
+    if (err) {
+      logger.error(err)
+      return res.json(Results.onFailure("잘못된 접근입니다"))
+    }
+    else {
+      req.files = files
+      req.decoded = decoded;
+      next();
+    }
+  })
+}
+controller.isBallottokenCheck = (req, res, next) => {
+  const token = req.headers['x-refresh-token'];
+  jwt.verify(token, 'locsballot_rk', (err, decoded) => {
+    if (err) {
+      logger.error(err)
+      return res.json(Results.onFailure("잘못된 접근입니다"))
+    }
+    else {
+      req.decoded = decoded;
+
+      next();
+    }
+  })
+}
+
 controller.getUserLogin = async (req, res, next) => {
-  const { code } = req.body
+  const { code, phone } = req.body
+
+  const strquery = "%" + phone
   try {
-    const [[user]] = await pool.query('SELECT * FROM voter WHERE code = ? limit 1', [code])
+    const [[user]] = await pool.query('SELECT * FROM voter WHERE code = ? AND phone LIKE (?) limit 1', [code, strquery])
 
     if (user == undefined) return res.json(Results.onFailure("잘못된 유저 코드 입니다"))
     const payload = {
       id: user.id,
       username: user.username,
+      birthday: user.birthday,
       phone: user.phone
     }
 
@@ -59,7 +93,6 @@ controller.getUserLogin = async (req, res, next) => {
     const result = {
       username: user.username,
       phone: user.phone,
-      gender: user.gender,
       ak: access_token,
       rk: refresh_token
     }
@@ -90,7 +123,8 @@ controller.getCandidateList = async (req, res, next) => {
   // 선거가 진행중일때만 조회할수잇도록 한다 예외처리 해야됨
 
   try {
-    const [candidate] = await pool.query('SELECT * FROM candidate WHERE election_id = ?', [election])
+
+    const [candidate] = await pool.query('SELECT candidate.*, voter.username FROM candidate, voter WHERE voter.id = candidate.voter_id AND voter.election_id = ?', [election])
 
     return res.json(Results.onSuccess(candidate))
   } catch (error) {
@@ -136,6 +170,42 @@ controller.setCandidateList = async (req, res, next) => {
     return res.json(Results.onSuccess({ id: candidate }))
   } catch (error) {
     connection.rollback()
+    logger.error(error.stack)
+    return res.json(Results.onFailure("ERROR"))
+  }
+}
+
+
+controller.getBallotLogin = async (req, res, next) => {
+  const { code, phone } = req.body
+
+  const strquery = "%" + phone
+
+
+  // 선거가 진행중일때만 조회할수잇도록 한다 예외처리 해야됨
+
+  try {
+
+    const [[user]] = await pool.query('SELECT voter.username, voter.birthday, voter.phone FROM ballot, voter WHERE ballot.code = ? AND ballot.voter_id = voter.id AND voter.phone LIKE (?)', [code, strquery])
+
+    if (user == undefined) return res.json(Results.onFailure("잘못된 권한 코드 입니다"))
+    const payload = {
+      username: user.username,
+      birthday: user.birthday,
+      phone: user.phone
+    }
+
+    const access_token = jwt.sign(payload, "locsballot_ak", { expiresIn: '15d' })
+    const refresh_token = jwt.sign(payload, "locsballot_rk", { expiresIn: '365d' })
+
+    const result = {
+      username: user.username,
+      phone: user.phone,
+      ak: access_token,
+      rk: refresh_token
+    }
+    return res.json(Results.onSuccess(result))
+  } catch (error) {
     logger.error(error.stack)
     return res.json(Results.onFailure("ERROR"))
   }

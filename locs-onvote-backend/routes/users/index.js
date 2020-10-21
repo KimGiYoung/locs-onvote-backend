@@ -13,4 +13,9 @@ router.get('/:election/list', controller.isLoginCheck, controller.getCandidateLi
 router.post('/:election/list', controller.isLoginCheck, controller.setCandidateList)
 
 
+router.post('/ballotlogin', controller.getBallotLogin)
+router.get('/ballot/list', controller.isBallotLoginCheck)
+
+
+
 module.exports = router;
