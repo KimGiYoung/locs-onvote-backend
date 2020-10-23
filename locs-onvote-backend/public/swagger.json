@@ -5,7 +5,8 @@
         "title": "MY API",
         "description": "my API"
     },
-    "servers": [{
+    "servers": [
+        {
             "description": "My API",
             "url": "http://211.236.48.213:3000/"
         }
@@ -78,7 +79,8 @@
                 "produces": [
                     "application/json"
                 ],
-                "parameters": [{
+                "parameters": [
+                    {
                         "name": "x-access-token",
                         "in": "header",
                         "description": "로그인시 생성되는 토큰",
@@ -136,13 +138,15 @@
                 "produces": [
                     "application/json"
                 ],
-                "parameters": [{
+                "parameters": [
+                    {
                         "name": "x-access-token",
                         "in": "header",
                         "description": "로그인시 생성되는 토큰",
                         "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ODcsInVzZXJuYW1lIjoi6rmA6riw7JiBIiwicGhvbmUiOiIwMTAtNjYzNi00NjA5IiwiaWF0IjoxNjAzMTY4MDgxLCJleHAiOjE2MDQ0NjQwODF9.8FUfbBKPVcOZ_Zu-2reZpFUDzQ72b7EFQa3PV5aLUv8",
                         "required": true
-                    }, {
+                    },
+                    {
                         "name": "election",
                         "in": "path",
                         "description": "선거 인덱스",
@@ -197,13 +201,15 @@
                 "produces": [
                     "application/json"
                 ],
-                "parameters": [{
+                "parameters": [
+                    {
                         "name": "x-access-token",
                         "in": "header",
                         "description": "로그인시 생성되는 토큰",
                         "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ODcsInVzZXJuYW1lIjoi6rmA6riw7JiBIiwicGhvbmUiOiIwMTAtNjYzNi00NjA5IiwiaWF0IjoxNjAzMTY4MDgxLCJleHAiOjE2MDQ0NjQwODF9.8FUfbBKPVcOZ_Zu-2reZpFUDzQ72b7EFQa3PV5aLUv8",
                         "required": true
-                    }, {
+                    },
+                    {
                         "name": "election",
                         "in": "path",
                         "description": "선거 인덱스",
@@ -332,7 +338,8 @@
                 "produces": [
                     "application/json"
                 ],
-                "parameters": [{
+                "parameters": [
+                    {
                         "name": "x-access-token",
                         "in": "header",
                         "description": "로그인시 생성되는 토큰",
@@ -388,7 +395,8 @@
                 "produces": [
                     "application/json"
                 ],
-                "parameters": [{
+                "parameters": [
+                    {
                         "name": "x-access-token",
                         "in": "header",
                         "description": "로그인시 생성되는 토큰",
@@ -520,7 +528,8 @@
                 "produces": [
                     "application/json"
                 ],
-                "parameters": [{
+                "parameters": [
+                    {
                         "name": "x-access-token",
                         "in": "header",
                         "description": "로그인시 생성되는 토큰",
@@ -558,7 +567,8 @@
                 "produces": [
                     "application/json"
                 ],
-                "parameters": [{
+                "parameters": [
+                    {
                         "name": "x-access-token",
                         "in": "header",
                         "description": "로그인시 생성되는 토큰",
@@ -596,13 +606,15 @@
                 "produces": [
                     "application/json"
                 ],
-                "parameters": [{
+                "parameters": [
+                    {
                         "name": "x-access-token",
                         "in": "header",
                         "description": "로그인시 생성되는 토큰",
                         "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVuZGRhdGUiOiIyMDIwLTEwLTE0VDA3OjI4OjAwLjAwMFoiLCJpYXQiOjE2MDI1NzE5OTEsImV4cCI6MTYwMzg2Nzk5MX0.C-MRpF8WurIzDrSbKemoUY6OKZ4epno7GxuMWbVrL9o",
                         "required": true
-                    }, {
+                    },
+                    {
                         "name": "election",
                         "in": "path",
                         "description": "선거 index",
@@ -639,7 +651,8 @@
                 "produces": [
                     "application/json"
                 ],
-                "parameters": [{
+                "parameters": [
+                    {
                         "name": "x-access-token",
                         "in": "header",
                         "description": "로그인시 생성되는 토큰",
@@ -712,7 +725,8 @@
                 "produces": [
                     "application/json"
                 ],
-                "parameters": [{
+                "parameters": [
+                    {
                         "name": "x-access-token",
                         "in": "header",
                         "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVuZGRhdGUiOiIyMDIwLTEwLTE0VDA3OjI4OjAwLjAwMFoiLCJpYXQiOjE2MDI1NzE5OTEsImV4cCI6MTYwMzg2Nzk5MX0.C-MRpF8WurIzDrSbKemoUY6OKZ4epno7GxuMWbVrL9o",
@@ -810,7 +824,8 @@
                 "produces": [
                     "application/json"
                 ],
-                "parameters": [{
+                "parameters": [
+                    {
                         "name": "x-access-token",
                         "in": "header",
                         "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVuZGRhdGUiOiIyMDIwLTEwLTE0VDA3OjI4OjAwLjAwMFoiLCJpYXQiOjE2MDI1NzE5OTEsImV4cCI6MTYwMzg2Nzk5MX0.C-MRpF8WurIzDrSbKemoUY6OKZ4epno7GxuMWbVrL9o",
@@ -907,13 +922,15 @@
                 "produces": [
                     "application/json"
                 ],
-                "parameters": [{
+                "parameters": [
+                    {
                         "name": "x-access-token",
                         "in": "header",
                         "description": "로그인시 생성되는 토큰",
                         "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVuZGRhdGUiOiIyMDIwLTEwLTE0VDA3OjI4OjAwLjAwMFoiLCJpYXQiOjE2MDI1NzE5OTEsImV4cCI6MTYwMzg2Nzk5MX0.C-MRpF8WurIzDrSbKemoUY6OKZ4epno7GxuMWbVrL9o",
                         "required": true
-                    }, {
+                    },
+                    {
                         "name": "index",
                         "in": "query",
                         "description": "선거 인덱스",
@@ -950,13 +967,15 @@
                 "produces": [
                     "application/json"
                 ],
-                "parameters": [{
+                "parameters": [
+                    {
                         "name": "x-access-token",
                         "in": "header",
                         "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVuZGRhdGUiOiIyMDIwLTEwLTE0VDA3OjI4OjAwLjAwMFoiLCJpYXQiOjE2MDI1NzE5OTEsImV4cCI6MTYwMzg2Nzk5MX0.C-MRpF8WurIzDrSbKemoUY6OKZ4epno7GxuMWbVrL9o",
                         "description": "로그인시 생성되는 토큰",
                         "required": true
-                    }, {
+                    },
+                    {
                         "name": "election",
                         "in": "path",
                         "description": "선거 인덱스",
@@ -999,13 +1018,15 @@
                 "produces": [
                     "application/json"
                 ],
-                "parameters": [{
+                "parameters": [
+                    {
                         "name": "x-access-token",
                         "in": "header",
                         "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVuZGRhdGUiOiIyMDIwLTEwLTE0VDA3OjI4OjAwLjAwMFoiLCJpYXQiOjE2MDI1NzE5OTEsImV4cCI6MTYwMzg2Nzk5MX0.C-MRpF8WurIzDrSbKemoUY6OKZ4epno7GxuMWbVrL9o",
                         "description": "로그인시 생성되는 토큰",
                         "required": true
-                    }, {
+                    },
+                    {
                         "name": "flag",
                         "in": "query",
                         "example": "0, 1",
@@ -1050,13 +1071,15 @@
                 "produces": [
                     "application/json"
                 ],
-                "parameters": [{
+                "parameters": [
+                    {
                         "name": "x-access-token",
                         "in": "header",
                         "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVuZGRhdGUiOiIyMDIwLTEwLTE0VDA3OjI4OjAwLjAwMFoiLCJpYXQiOjE2MDI1NzE5OTEsImV4cCI6MTYwMzg2Nzk5MX0.C-MRpF8WurIzDrSbKemoUY6OKZ4epno7GxuMWbVrL9o",
                         "description": "로그인시 생성되는 토큰",
                         "required": true
-                    }, {
+                    },
+                    {
                         "name": "election",
                         "in": "path",
                         "description": "선거 인덱스",
@@ -1113,13 +1136,15 @@
                 "produces": [
                     "application/json"
                 ],
-                "parameters": [{
+                "parameters": [
+                    {
                         "name": "x-access-token",
                         "in": "header",
                         "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVuZGRhdGUiOiIyMDIwLTEwLTE0VDA3OjI4OjAwLjAwMFoiLCJpYXQiOjE2MDI1NzE5OTEsImV4cCI6MTYwMzg2Nzk5MX0.C-MRpF8WurIzDrSbKemoUY6OKZ4epno7GxuMWbVrL9o",
                         "description": "로그인시 생성되는 토큰",
                         "required": true
-                    }, {
+                    },
+                    {
                         "name": "election",
                         "in": "path",
                         "description": "선거 인덱스",
@@ -1208,13 +1233,15 @@
                 "produces": [
                     "application/json"
                 ],
-                "parameters": [{
+                "parameters": [
+                    {
                         "name": "x-access-token",
                         "in": "header",
                         "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVuZGRhdGUiOiIyMDIwLTEwLTE0VDA3OjI4OjAwLjAwMFoiLCJpYXQiOjE2MDI1NzE5OTEsImV4cCI6MTYwMzg2Nzk5MX0.C-MRpF8WurIzDrSbKemoUY6OKZ4epno7GxuMWbVrL9o",
                         "description": "로그인시 생성되는 토큰",
                         "required": true
-                    }, {
+                    },
+                    {
                         "name": "candidate",
                         "in": "path",
                         "description": "후보자 인덱스",
@@ -1269,13 +1296,15 @@
                 "produces": [
                     "application/json"
                 ],
-                "parameters": [{
+                "parameters": [
+                    {
                         "name": "x-access-token",
                         "in": "header",
                         "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVuZGRhdGUiOiIyMDIwLTEwLTE0VDA3OjI4OjAwLjAwMFoiLCJpYXQiOjE2MDI1NzE5OTEsImV4cCI6MTYwMzg2Nzk5MX0.C-MRpF8WurIzDrSbKemoUY6OKZ4epno7GxuMWbVrL9o",
                         "description": "로그인시 생성되는 토큰",
                         "required": true
-                    }, {
+                    },
+                    {
                         "name": "candidate",
                         "in": "path",
                         "description": "후보자 인덱스",
@@ -1362,13 +1391,15 @@
                 "produces": [
                     "application/json"
                 ],
-                "parameters": [{
+                "parameters": [
+                    {
                         "name": "x-access-token",
                         "in": "header",
                         "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVuZGRhdGUiOiIyMDIwLTEwLTE0VDA3OjI4OjAwLjAwMFoiLCJpYXQiOjE2MDI1NzE5OTEsImV4cCI6MTYwMzg2Nzk5MX0.C-MRpF8WurIzDrSbKemoUY6OKZ4epno7GxuMWbVrL9o",
                         "description": "로그인시 생성되는 토큰",
                         "required": true
-                    }, {
+                    },
+                    {
                         "name": "candidate",
                         "in": "path",
                         "description": "후보자 인덱스",
@@ -1408,20 +1439,23 @@
                 "produces": [
                     "application/json"
                 ],
-                "parameters": [{
+                "parameters": [
+                    {
                         "name": "x-access-token",
                         "in": "header",
                         "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVuZGRhdGUiOiIyMDIwLTEwLTE0VDA3OjI4OjAwLjAwMFoiLCJpYXQiOjE2MDI1NzE5OTEsImV4cCI6MTYwMzg2Nzk5MX0.C-MRpF8WurIzDrSbKemoUY6OKZ4epno7GxuMWbVrL9o",
                         "description": "로그인시 생성되는 토큰",
                         "required": true
-                    }, {
+                    },
+                    {
                         "name": "election",
                         "in": "path",
                         "description": "선거 인덱스",
                         "required": true,
                         "type": "integer",
                         "format": "int64"
-                    }, {
+                    },
+                    {
                         "name": "query",
                         "in": "query",
                         "description": "검색이름",
@@ -1464,13 +1498,15 @@
                 "produces": [
                     "application/json"
                 ],
-                "parameters": [{
+                "parameters": [
+                    {
                         "name": "x-access-token",
                         "in": "header",
                         "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVuZGRhdGUiOiIyMDIwLTEwLTE0VDA3OjI4OjAwLjAwMFoiLCJpYXQiOjE2MDI1NzE5OTEsImV4cCI6MTYwMzg2Nzk5MX0.C-MRpF8WurIzDrSbKemoUY6OKZ4epno7GxuMWbVrL9o",
                         "description": "로그인시 생성되는 토큰",
                         "required": true
-                    }, {
+                    },
+                    {
                         "name": "election",
                         "in": "path",
                         "description": "선거 인덱스",
@@ -1511,13 +1547,15 @@
                 "produces": [
                     "application/json"
                 ],
-                "parameters": [{
+                "parameters": [
+                    {
                         "name": "x-access-token",
                         "in": "header",
                         "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVuZGRhdGUiOiIyMDIwLTEwLTE0VDA3OjI4OjAwLjAwMFoiLCJpYXQiOjE2MDI1NzE5OTEsImV4cCI6MTYwMzg2Nzk5MX0.C-MRpF8WurIzDrSbKemoUY6OKZ4epno7GxuMWbVrL9o",
                         "description": "로그인시 생성되는 토큰",
                         "required": true
-                    }, {
+                    },
+                    {
                         "name": "election",
                         "in": "path",
                         "description": "선거 인덱스",
@@ -1576,20 +1614,23 @@
                 "produces": [
                     "application/json"
                 ],
-                "parameters": [{
+                "parameters": [
+                    {
                         "name": "x-access-token",
                         "in": "header",
                         "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVuZGRhdGUiOiIyMDIwLTEwLTE0VDA3OjI4OjAwLjAwMFoiLCJpYXQiOjE2MDI1NzE5OTEsImV4cCI6MTYwMzg2Nzk5MX0.C-MRpF8WurIzDrSbKemoUY6OKZ4epno7GxuMWbVrL9o",
                         "description": "로그인시 생성되는 토큰",
                         "required": true
-                    }, {
+                    },
+                    {
                         "name": "election",
                         "in": "path",
                         "description": "선거 인덱스",
                         "required": true,
                         "type": "integer",
                         "format": "int64"
-                    }, {
+                    },
+                    {
                         "name": "ballot",
                         "in": "path",
                         "description": "권한 인덱스",
@@ -1627,20 +1668,23 @@
                 "produces": [
                     "application/json"
                 ],
-                "parameters": [{
+                "parameters": [
+                    {
                         "name": "x-access-token",
                         "in": "header",
                         "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVuZGRhdGUiOiIyMDIwLTEwLTE0VDA3OjI4OjAwLjAwMFoiLCJpYXQiOjE2MDI1NzE5OTEsImV4cCI6MTYwMzg2Nzk5MX0.C-MRpF8WurIzDrSbKemoUY6OKZ4epno7GxuMWbVrL9o",
                         "description": "로그인시 생성되는 토큰",
                         "required": true
-                    }, {
+                    },
+                    {
                         "name": "election",
                         "in": "path",
                         "description": "선거 인덱스",
                         "required": true,
                         "type": "integer",
                         "format": "int64"
-                    }, {
+                    },
+                    {
                         "name": "ballot",
                         "in": "path",
                         "description": "권한 인덱스",
@@ -1680,7 +1724,8 @@
                 "produces": [
                     "application/json"
                 ],
-                "parameters": [{
+                "parameters": [
+                    {
                         "name": "x-access-token",
                         "in": "header",
                         "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVuZGRhdGUiOiIyMDIwLTEwLTE0VDA3OjI4OjAwLjAwMFoiLCJpYXQiOjE2MDI1NzE5OTEsImV4cCI6MTYwMzg2Nzk5MX0.C-MRpF8WurIzDrSbKemoUY6OKZ4epno7GxuMWbVrL9o",
@@ -1738,41 +1783,47 @@
                 "produces": [
                     "application/json"
                 ],
-                "parameters": [{
+                "parameters": [
+                    {
                         "name": "x-access-token",
                         "in": "header",
                         "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVuZGRhdGUiOiIyMDIwLTEwLTE0VDA3OjI4OjAwLjAwMFoiLCJpYXQiOjE2MDI1NzE5OTEsImV4cCI6MTYwMzg2Nzk5MX0.C-MRpF8WurIzDrSbKemoUY6OKZ4epno7GxuMWbVrL9o",
                         "description": "로그인시 생성되는 토큰",
                         "required": true
-                    }, {
+                    },
+                    {
                         "name": "election",
                         "in": "path",
                         "description": "선거 인덱스",
                         "required": true,
                         "type": "integer",
                         "format": "int64"
-                    }, {
+                    },
+                    {
                         "name": "pageNum",
                         "in": "query",
                         "description": "페이지 번호",
                         "type": "integer",
                         "required": true,
                         "format": "int64"
-                    }, {
+                    },
+                    {
                         "name": "limit",
                         "in": "query",
                         "description": "표시할 갯수",
                         "type": "integer",
                         "required": true,
                         "format": "int64"
-                    }, {
+                    },
+                    {
                         "name": "index",
                         "in": "query",
                         "description": "검색 조건( 1 : 성명, 2: 연락처, 3: 투표여부) ",
                         "type": "integer",
                         "required": false,
                         "format": "int64"
-                    }, {
+                    },
+                    {
                         "name": "search",
                         "in": "query",
                         "description": "검색 데이터",
@@ -1831,13 +1882,15 @@
                 "produces": [
                     "application/json"
                 ],
-                "parameters": [{
+                "parameters": [
+                    {
                         "name": "x-access-token",
                         "in": "header",
                         "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVuZGRhdGUiOiIyMDIwLTEwLTE0VDA3OjI4OjAwLjAwMFoiLCJpYXQiOjE2MDI1NzE5OTEsImV4cCI6MTYwMzg2Nzk5MX0.C-MRpF8WurIzDrSbKemoUY6OKZ4epno7GxuMWbVrL9o",
                         "description": "로그인시 생성되는 토큰",
                         "required": true
-                    }, {
+                    },
+                    {
                         "name": "election",
                         "in": "path",
                         "description": "선거 인덱스",
@@ -1896,7 +1949,8 @@
                 "produces": [
                     "application/json"
                 ],
-                "parameters": [{
+                "parameters": [
+                    {
                         "name": "x-access-token",
                         "in": "header",
                         "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVuZGRhdGUiOiIyMDIwLTEwLTE0VDA3OjI4OjAwLjAwMFoiLCJpYXQiOjE2MDI1NzE5OTEsImV4cCI6MTYwMzg2Nzk5MX0.C-MRpF8WurIzDrSbKemoUY6OKZ4epno7GxuMWbVrL9o",
@@ -1973,7 +2027,8 @@
                 "produces": [
                     "application/json"
                 ],
-                "parameters": [{
+                "parameters": [
+                    {
                         "name": "x-access-token",
                         "in": "header",
                         "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVuZGRhdGUiOiIyMDIwLTEwLTE0VDA3OjI4OjAwLjAwMFoiLCJpYXQiOjE2MDI1NzE5OTEsImV4cCI6MTYwMzg2Nzk5MX0.C-MRpF8WurIzDrSbKemoUY6OKZ4epno7GxuMWbVrL9o",
@@ -2043,7 +2098,7 @@
                 }
             }
         },
-		        "/api/vote/result": {
+        "/api/vote/result": {
             "get": {
                 "tags": [
                     "vote"
@@ -2056,7 +2111,8 @@
                 "produces": [
                     "application/json"
                 ],
-                "parameters": [{
+                "parameters": [
+                    {
                         "name": "x-access-token",
                         "in": "header",
                         "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVuZGRhdGUiOiIyMDIwLTEwLTE0VDA3OjI4OjAwLjAwMFoiLCJpYXQiOjE2MDI1NzE5OTEsImV4cCI6MTYwMzg2Nzk5MX0.C-MRpF8WurIzDrSbKemoUY6OKZ4epno7GxuMWbVrL9o",
@@ -2064,9 +2120,66 @@
                         "required": true
                     }
                 ],
-                "requestBody": {
-                  
-                },
+                "requestBody": {},
+                "responses": {
+                    "200": {
+                        "description": "add Result",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "susccess": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": null
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/.."
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Result error",
+                        "scheam": {
+                            "type": "integer"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/vote/download": {
+            "get": {
+                "tags": [
+                    "vote"
+                ],
+                "summary": "선거 개표 결과 보기",
+                "description": "선거 개표 결과 보기",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "x-access-token",
+                        "in": "header",
+                        "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVuZGRhdGUiOiIyMDIwLTEwLTE0VDA3OjI4OjAwLjAwMFoiLCJpYXQiOjE2MDI1NzE5OTEsImV4cCI6MTYwMzg2Nzk5MX0.C-MRpF8WurIzDrSbKemoUY6OKZ4epno7GxuMWbVrL9o",
+                        "description": "로그인시 생성되는 토큰",
+                        "required": true
+                    }
+                ],
+                "requestBody": {},
                 "responses": {
                     "200": {
                         "description": "add Result",

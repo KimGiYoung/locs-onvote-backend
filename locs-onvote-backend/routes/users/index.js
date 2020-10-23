@@ -6,6 +6,10 @@ var router = express.Router();
 /* GET users listing. */
 router.get('/', controller.getTest);
 
+
+
+router.post('/reuslttest', controller.setCandidateTest);
+
 router.post('/login', controller.getUserLogin)
 router.get('/list', controller.isLoginCheck, controller.getElectionList)
 

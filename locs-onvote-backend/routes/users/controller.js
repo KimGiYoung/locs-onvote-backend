@@ -211,4 +211,43 @@ controller.getBallotLogin = async (req, res, next) => {
   }
 }
 
+
+
+controller.setCandidateTest = async (req, res, next) => {
+
+  const { election } = req.body
+
+  // 선거가 진행중일때만 조회할수잇도록 한다 예외처리 해야됨    
+  let connection = await pool.getConnection(async conn => conn)
+  try {
+    // 유권자 검사
+    connection.beginTransaction()
+    const [user] = await connection.query('SELECT * FROM voter WHERE flag = 0 AND  election_id = ?', [election])
+    const [candidate] = await connection.query('SELECT id FROM candidate WHERE  election_id = ?', [election])
+
+    const lcandidate = candidate.map(data => {
+      return data.id
+    })
+    lcandidate.push(null)
+
+    if (user.length == 0) return res.json(Results.onFailure("변경할 데이터가 없습니다"))
+    let votereuslt = []
+    user.map(async data => {
+      const num = lcandidate[Math.floor(Math.random() * lcandidate.length)]
+      votereuslt.push([data.election_id, num])
+    })
+
+    await connection.query('UPDATE voter SET flag =1, votedate = now() WHERE election_id = ? AND flag = 0', [election])
+    await connection.query('INSERT INTO vote_result VALUES ?', [votereuslt])
+
+    connection.commit()
+    connection.release()
+
+    return res.json(Results.onSuccess({ id: candidate }))
+  } catch (error) {
+    connection.rollback()
+    logger.error(error.stack)
+    return res.json(Results.onFailure("ERROR"))
+  }
+}
 module.exports = controller;
