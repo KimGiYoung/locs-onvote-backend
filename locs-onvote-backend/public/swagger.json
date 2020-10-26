@@ -1861,10 +1861,34 @@
                     {
                         "name": "search",
                         "in": "query",
-                        "description": "검색 데이터",
+                        "description": "검색 데이터 (검색 데이터가 없는경우 null로 전송)",
                         "type": "string",
                         "required": false,
                         "format": "string"
+                    },
+                    {
+                        "name": "flag",
+                        "in": "query",
+                        "description": "투표 여부( 0 : 미투표,  1: 투표완료) flag가 없는 경우 null로 전송",
+                        "type": "integer",
+                        "required": false,
+                        "format": "int"
+                    },
+                    {
+                        "name": "start",
+                        "in": "query",
+                        "description": "시작날짜 (시작날짜가 없는경우 null로 전송)",
+                        "type": "string",
+                        "required": false,
+                        "format": "date-time"
+                    },
+                    {
+                        "name": "end",
+                        "in": "query",
+                        "description": "끝날짜  (끝날짜가 없는경우 null로 전송)",
+                        "type": "string",
+                        "required": false,
+                        "format": "date-time"
                     }
                 ],
                 "requestBody": {},

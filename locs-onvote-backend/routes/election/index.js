@@ -25,10 +25,8 @@ const storage = multer.diskStorage({
     },
     filename(req, file, callback) {
         try {
-
             const extension = path.extname(file.originalname);
             const basename = path.basename(file.originalname, extension);
-
             callback(null, basename + "-" + Date.now() + extension);
         }
         catch (e) {
@@ -54,7 +52,6 @@ router.get('/list', admin.isLoginCheck, controller.getElectionList);    // 선�
 router.post('/list', memory.array('file', 1), admin.isLoginCheck, controller.setElectionList);   // 선거 추가
 router.put('/list', memory.array('file', 1), admin.isLoginCheck, controller.putElectionList);   // 선거 수정
 router.delete('/list', admin.isLoginCheck, controller.deleteElectionList);    // 선거 삭제
-
 
 router.get('/short', admin.isLoginCheck, controller.getElectionShortList);  // 선거 간략한 정보 리스트
 

@@ -65,4 +65,10 @@ logger.stream = {
     },
 };
 
+logger.getIP = (req) => {
+    if (req == undefined) return "127.0.0.1"
+    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+    return ip.substring(7)
+}
+
 module.exports = logger;

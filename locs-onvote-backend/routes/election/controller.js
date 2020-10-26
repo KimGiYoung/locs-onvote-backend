@@ -155,13 +155,13 @@ controller.putElectionList = async (req, res, next) => {
   const tEnd_dt = new Date(end_dt).toLocaleString('ko-KR', { hour12: false })
   const tStart_preview = new Date(start_preview).toLocaleString('ko-KR', { hour12: false })
   const tEnd_preview = new Date(end_preview).toLocaleString('ko-KR', { hour12: false })
-  console.log(tStart_dt, tEnd_dt, tStart_preview, tEnd_preview)
 
   const file = req.files
   let connection = await pool.getConnection(async conn => conn)
   try {
 
-    const [check] = await connection.query('SELECT flag FROM election WHERE admin_id = ? AND id = ?', [id, index])
+    const [[check]] = await connection.query('SELECT flag FROM election WHERE admin_id = ? AND id = ?', [id, index])
+
 
     if (check.flag == 1) return res.json(Results.onFailure("현재 진행중입니다."))
 
@@ -170,7 +170,10 @@ controller.putElectionList = async (req, res, next) => {
     const election = index
 
     if (file != undefined && file.length != 0) {
-
+      const [[check1]] = await connection.query('SELECT COUNT(*) AS count FROM candidate WHERE election_id =?', [index])
+      const [[check2]] = await connection.query('SELECT COUNT(*) AS count FROM ballot WHERE election_id = ?', [index])
+      if (check1 > 0) return res.json(Results.onFailure("후보자가 등록되어 있습니다."))
+      if (check2 > 0) return res.json(Results.onFailure("권한정보가 등록되어 있습니다."))
       const excelFile = xlsx.read(file[0].buffer)      // @breif 엑셀 파일의 첫번째 시트의 정보를 추출
 
       const sheetName = excelFile.SheetNames[0];          // @details 첫번째 시트 정보 추출
@@ -186,7 +189,15 @@ controller.putElectionList = async (req, res, next) => {
       }
       let values = [];
       for (let i = 0; i < jsonData.length; i++) {
+        if (isBirhdayType(jsonData[i].생년월일) == false) {
+          await connection.rollback()
+          return res.json(Results.onFailure(jsonData[i].이름 + "님의 생년월일유형이 잘못되었습니다."))
+        }
 
+        if (isPhoneType(jsonData[i].핸드폰) == false) {
+          await connection.rollback()
+          return res.json(Results.onFailure(jsonData[i].이름 + "님의 핸드폰유형이 잘못되었습니다."))
+        }
         values.push([election, jsonData[i].이름, jsonData[i].생년월일, jsonData[i].핸드폰, jsonData[i].성별, nanoid.nanoid(10)])
       }
       await connection.query('DELETE FROM voter WHERE election_id = ?', [election])
@@ -216,8 +227,10 @@ controller.deleteElectionList = async (req, res, next) => {
 
     const [check] = await pool.query('SELECT flag FROM election WHERE admin_id = ? AND id = ?', [id, index])
     if (check.flag == 1) return res.json(Results.onFailure("현재 진행중입니다."))
-    const [[candiate]] = await pool.query('SELECT COUNT(*) as count FROM candidate WHERE election_id = ? ', [index])
-    if (candiate.count > 0) return res.json(Results.onFailure("후보자가 등록되어있습니다."))
+    const [[check1]] = await connection.query('SELECT COUNT(*) AS count FROM candidate WHERE election_id =?', [index])
+    const [[check2]] = await connection.query('SELECT COUNT(*) AS count FROM ballot WHERE election_id = ?', [index])
+    if (check1 > 0) return res.json(Results.onFailure("후보자가 등록되어 있습니다."))
+    if (check2 > 0) return res.json(Results.onFailure("권한정보가 등록되어 있습니다."))
     await pool.query('DELETE FROM election WHERE admin_id = ? AND id = ?', [id, index])
 
     return res.json(Results.onSuccess({ id: index }))
@@ -295,9 +308,9 @@ controller.setCandidate = async (req, res, next) => {
     const [[data]] = await pool.query('SELECT noption FROM election WHERE id = ?', [election])
     if (data.noption == 0) //단일
     {
-      let [[count]] = await pool.query('SELECT count(*) as COUNT FROM candidate WHERE election_id = ?', [election])
+      let [[check1]] = await pool.query('SELECT COUNT(*) AS count FROM candidate WHERE election_id = ?', [election])
 
-      if (count.COUNT >= 2) {
+      if (check1.count >= 2) {
         return res.json(Results.onFailure("단일후보가 있습니다."))
       }
       let list = []
@@ -307,15 +320,15 @@ controller.setCandidate = async (req, res, next) => {
       return res.json(Results.onSuccess({ id: data.insertId }))
     }
     else {
-      let [[count]] = await pool.query('SELECT count(*) as COUNT FROM candidate WHERE voter_id = ? AND election_id = ? ', [voter_id, election])
+      let [[check1]] = await pool.query('SELECT COUNT(*) AS count FROM candidate WHERE voter_id = ? AND election_id = ? ', [voter_id, election])
 
-      if (count.COUNT >= 1) {
+      if (check1.count >= 1) {
         return res.json(Results.onFailure("동일한 후보가 있습니다."))
       }
 
-      let [[check]] = await pool.query('SELECT count(*) as count FROM candidate WHERE election_id = ? AND symbol = ?', [election, symbol])
-      if (check.count >= 1) {
-        return res.json(Results.onFailure("동일한 기호명이 있습니다"))
+      let [[check2]] = await pool.query('SELECT COUNT(*) AS count FROM candidate WHERE election_id = ? AND (symbol = ? OR team = ? )', [election, symbol, team])
+      if (check2.count >= 1) {
+        return res.json(Results.onFailure("동일한 기호나 팀명이 있습니다"))
       }
       const [data] = await pool.query('INSERT INTO candidate(election_id, voter_id, symbol, team, pledge, pdf_path, img_path, youtube_path) VALUES (?, ?, ?, ?, ?, ?, ? ,?)', [election, voter_id, symbol, team, pledge, pdf_path, img_path, youtube])
       return res.json(Results.onSuccess({ id: data.insertId }))
@@ -368,7 +381,7 @@ controller.putCandidate = async (req, res, next) => {
 
     if (data.noption == 0) //단일
     {
-      const [data] = await connection.query('UPDATE candidate set voter_id=?, team=?, pledge=?,pdf_path=?, img_path=?, youtube_path=?, WHERE election_id = ?', [voter_id, team, pledge, , pdf_path, img_path, youtube, election])
+      const [data] = await connection.query('UPDATE candidate set voter_id=?, team=?, pledge=?,pdf_path=?, img_path=?, youtube_path=? WHERE election_id = ?', [voter_id, team, pledge, pdf_path, img_path, youtube, election])
     }
     else {
       const [data] = await connection.query('UPDATE candidate set voter_id=?, symbol=?, team=?, pledge=?, pdf_path=?, img_path=?, youtube_path=? WHERE id = ?', [voter_id, symbol, team, pledge, pdf_path, img_path, youtube, candidate])

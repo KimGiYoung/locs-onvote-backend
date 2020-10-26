@@ -48,7 +48,7 @@ controller.getUserLogin = async (req, res, next) => {
   try {
     const [[user]] = await pool.query('SELECT * FROM voter WHERE code = ? AND phone LIKE (?) limit 1', [code, strquery])
 
-    if (user == undefined) return res.json(Results.onFailure("잘못된 유저 코드 입니다"))
+    if (user == undefined) return res.json(Results.onFailure("인증이 실패하였습니다"))
     const payload = {
       id: user.id,
       username: user.username,
@@ -75,7 +75,7 @@ controller.getUserLogin = async (req, res, next) => {
 controller.getElectionList = async (req, res, next) => {
   const { phone } = req.decoded
   try {
-    const [data] = await pool.query('SELECT election.id, election.name, election.start_dt, election.end_dt, voter.flag FROM election, voter WHERE election.id = voter.election_id AND election.flag in(1,2) AND voter.phone = ? ORDER BY election.id', [phone])
+    const [data] = await pool.query('SELECT election.id, election.name, election.start_dt, election.end_dt, voter.flag FROM election, voter WHERE election.id = voter.election_id AND election.flag in(1) AND voter.phone = ? ORDER BY election.id', [phone])
     return res.json(Results.onSuccess(data))
   } catch (error) {
     logger.error(error.stack)

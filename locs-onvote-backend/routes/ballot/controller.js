@@ -53,7 +53,7 @@ controller.getBallotLogin = async (req, res, next) => {
 
     const [[user]] = await pool.query('SELECT voter.username, voter.birthday, voter.phone FROM ballot, voter WHERE ballot.code = ? AND ballot.voter_id = voter.id AND voter.phone LIKE (?)', [code, strquery])
 
-    if (user == undefined) return res.json(Results.onFailure("잘못된 권한 코드 입니다"))
+    if (user == undefined) return res.json(Results.onFailure("인증이 실패하였습니다"))
     const payload = {
       username: user.username,
       birthday: user.birthday,
@@ -93,16 +93,26 @@ controller.getBallotlist = async (req, res, next) => {
 controller.setBallotlist = async (req, res, next) => {
   const { phone } = req.decoded
   const { ballot } = req.body
-
+  const ballotlist = ballot.split(',')
   try {
 
-    const [[check]] = await pool.query('SELECT election.flag FROM ballot, election WHERE ballot.election_id = election.id AND ballot.id = ?', [ballot])
-    if (check == undefined) return res.json(Results.onFailure("권한 번호가 잘못 되었습니다"))
+    const [check] = await pool.query('SELECT ballot.id, ballot.ballotdate, election.flag AS flag,  ballot.flag AS ballotflag, election.name FROM ballot, voter, election WHERE ballot.voter_id = voter.id AND  voter.election_id = election.id  AND voter.phone = ? AND ballot.id IN(?) ', [phone, ballotlist])
+    if (check.length == 0) return res.json(Results.onFailure("권한 번호가 잘못 되었습니다"))
 
+    const nlist = check.map(data => {
+      if (check.flag != 2) return 1
+      if (check.ballotflag == 1) return 2
+      return 0
+    })
 
-    if (check.flag != 2) return res.json(Results.onFailure("완료되지 않은 선거 입니다"))
+    if (nlist.indexOf(1) != -1) {
+      return res.json(Results.onFailure("완료되지 않은 선거 입니다"))
+    }
+    else if (nlist.indexOf(2) != -1) {
+      return res.json(Results.onFailure("이미 완료된 확인자 입니다"))
+    }
 
-    const [data] = await pool.query('UPDATE ballot SET ballotdate = now(), flag = 1 WHERE id = ?', [ballot])
+    const [data] = await pool.query('UPDATE ballot SET ballotdate = now(), flag = 1 WHERE id in(?)', [ballotlist])
     return res.json(Results.onSuccess({ id: ballot }))
 
   } catch (error) {
