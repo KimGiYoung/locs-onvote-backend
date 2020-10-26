@@ -134,12 +134,8 @@ controller.getVoteList = async (req, res, next) => {
   const skipSize = (npageNum - 1) * contentSize // NOTE: 다음 페이지 갈 때 건너뛸 
 
   try {
-    if (index == 1) {
-      query = `AND username='${search}'`
-    } else if (index == 2) {
-      query = `AND phone LIKE ('%${search}')`
-    } else if (index == 3) {
-      query = `AND flag=${search}`
+    if (search != undefined) {
+      query = `AND (username LIKE ('%${search}') OR phone LIKE('%${search}') OR birthday LIKE ('%${search}'))`
     }
     console.log(query)
 
@@ -187,11 +183,11 @@ controller.putElectionInvalid = async (req, res, next) => {
 
     }
 
-    connection.commit()
+    await connection.commit()
     connection.release()
     return res.json(Results.onSuccess({ id: electionlist }))
   } catch (error) {
-    connection.rollback()
+    await connection.rollback()
     logger.error(error.stack)
     return res.json(Results.onFailure("ERROR"))
   }
@@ -226,11 +222,27 @@ controller.putElectionAddDate = async (req, res, next) => {
 
     }
 
-    connection.commit()
+    await connection.commit()
     connection.release()
     return res.json(Results.onSuccess({ id: electionlist }))
   } catch (error) {
-    connection.rollback()
+    await connection.rollback()
+    logger.error(error.stack)
+    return res.json(Results.onFailure("ERROR"))
+  }
+}
+
+
+controller.getElectionCounting = async (req, res, next) => {
+  const { id } = req.decoded
+  // const {  } = req.params
+
+  try {
+    const [data] = await pool.query('SELECT election.id, election.name,  COUNT(ballot.election_id) AS total , COUNT(IF(ballot.flag=1, 1, NULL)) AS COUNT  FROM election LEFT JOIN ballot ON election.id = ballot.`election_id` WHERE election.flag = 2 AND election.admin_id = ? GROUP BY election.id ORDER BY election.id ', [id])
+
+    if (data.length == 0) return res.json(Results.onFailure("완료된 선거가 없습니다"))
+    return res.json(Results.onSuccess(data))
+  } catch (error) {
     logger.error(error.stack)
     return res.json(Results.onFailure("ERROR"))
   }
@@ -257,21 +269,58 @@ controller.setElectionCounting = async (req, res, next) => {
   }
 }
 
+controller.setElectionGroupCounting = async (req, res, next) => {
+  const { id } = req.decoded
+  const { election } = req.body
+  console.log(election)
+  const electionlist = election.split(',')
+  try {
+
+    const [ballot] = await pool.query(`
+      SELECT election.id, election.name, COUNT(ballot.election_id) AS total , COUNT(IF(ballot.flag=1, 1, NULL)) AS COUNT  FROM 
+      election LEFT JOIN ballot ON election.id = ballot.election_id WHERE election.flag = 2 AND election.admin_id = ?
+      AND election.id IN (?)
+      GROUP BY election.id      
+      
+    `, [id, electionlist])
+
+    for (let data of ballot) {
+      if (data.total != data.count) return res.json(Results.onFailure("모든 개표확인자가 확인하지 않았습니다"))
+    }
+
+    await pool.query('UPDATE election SET voteflag=1 WHERE id in (?)', [electionlist])
+
+    return res.json(Results.onSuccess({ id: electionlist }))
+  } catch (error) {
+
+    logger.error(error.stack)
+    return res.json(Results.onFailure("ERROR"))
+  }
+}
+
 
 controller.getVoteResult = async (req, res, next) => {
   const { id } = req.decoded
+  const { start, end } = req.query
   try {
-    const [eleciton] = await pool.query(`
-    SELECT election.id, election.name, election.start_dt, election.end_dt, election.noption, COUNT(*) AS total, COUNT(IF(voter.flag=1, 1, NULL)) AS count
+    let query = `SELECT election.id, election.name, election.start_dt, election.end_dt, election.noption, COUNT(*) AS total, COUNT(IF(voter.flag=1, 1, NULL)) AS count
     FROM election, voter
-     WHERE election.voteflag=1 AND election.flag = 2 AND  election.id = voter.election_id AND election.admin_id = ${id}
-    GROUP BY election.id, election.name, election.start_dt, election.end_dt, election.noption
-        `, [])
-    if (eleciton.length == 0) return res.json(Results.onFailure("개표할 결과가 없습니다"))
+     WHERE election.voteflag=1 AND election.flag = 2 AND  election.id = voter.election_id AND election.admin_id = ${id} 
+    GROUP BY election.id, election.name, election.start_dt, election.end_dt, election.noption  ORDER BY election.id desc `
+
+    if (start != 'null' && end != 'null') {
+      query = `SELECT election.id, election.name, election.start_dt, election.end_dt, election.noption, COUNT(*) AS total, COUNT(IF(voter.flag=1, 1, NULL)) AS count
+      FROM election, voter
+       WHERE election.voteflag=1 AND election.flag = 2 AND  election.id = voter.election_id AND election.admin_id = ${id} AND DATE(election.end_dt) BETWEEN '${start}' AND '${end}'
+      GROUP BY election.id, election.name, election.start_dt, election.end_dt, election.noption  ORDER BY election.id desc   `
+    }
+    // console.log(query)
+    const [eleciton] = await pool.query(query, [])
+    if (eleciton.length == 0) return res.json(Results.onSuccess())
     const result = eleciton.map(async data => {
       let json = {}
       json = data
-      let num = Math.floor(data.total / data.count)
+      let num = Math.floor((data.count / data.total) * 100)
       if (num === Infinity) num = 0
       json.rate = num
       const [vote] = await pool.query(`
@@ -333,21 +382,29 @@ controller.getVoteResult = async (req, res, next) => {
 
 controller.getVoteResultExcel = async (req, res, next) => {
   const { id } = req.decoded
+  const { start, end } = req.query
   try {
-    const [eleciton] = await pool.query(`
-    SELECT election.id, election.name, election.start_dt, election.end_dt, election.noption, COUNT(*) AS total, COUNT(IF(voter.flag=1, 1, NULL)) AS count
+    let query = `SELECT election.id, election.name, election.start_dt, election.end_dt, election.noption, COUNT(*) AS total, COUNT(IF(voter.flag=1, 1, NULL)) AS count
     FROM election, voter
-     WHERE election.voteflag=1 AND election.flag = 2 AND  election.id = voter.election_id AND election.admin_id = ${id}
-    GROUP BY election.id, election.name, election.start_dt, election.end_dt, election.noption ORDER BY electin.id desc 
-        `, [])
-    if (eleciton.length == 0) return res.json(Results.onFailure("개표할 결과가 없습니다"))
+     WHERE election.voteflag=1 AND election.flag = 2 AND  election.id = voter.election_id AND election.admin_id = ${id} 
+    GROUP BY election.id, election.name, election.start_dt, election.end_dt, election.noption  ORDER BY election.id desc `
+
+    if (start != 'null' && end != 'null') {
+      query = `SELECT election.id, election.name, election.start_dt, election.end_dt, election.noption, COUNT(*) AS total, COUNT(IF(voter.flag=1, 1, NULL)) AS count
+      FROM election, voter
+       WHERE election.voteflag=1 AND election.flag = 2 AND  election.id = voter.election_id AND election.admin_id = ${id} AND DATE(election.end_dt) BETWEEN '${start}' AND '${end}'
+      GROUP BY election.id, election.name, election.start_dt, election.end_dt, election.noption  ORDER BY election.id desc `
+    }
+    // console.log(query)
+    const [eleciton] = await pool.query(query, [])
+
 
 
     let candidate_list = []
     const result = eleciton.map(async data => {
       let json = {}
       json.선거명 = data.name
-      let num = Math.floor(data.total / data.count)
+      let num = Math.floor((data.count / data.total) * 100)
       if (num === Infinity) num = 0
       json.투표율 = num
       json.유권자 = data.total

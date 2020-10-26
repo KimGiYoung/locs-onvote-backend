@@ -1485,6 +1485,49 @@
                 }
             }
         },
+        "/api/vote/ballot/list": {
+            "get": {
+                "tags": [
+                    "vote"
+                ],
+                "summary": "개표확인자 전체 조회",
+                "description": "개표확인자 전체 조회",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "x-access-token",
+                        "in": "header",
+                        "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVuZGRhdGUiOiIyMDIwLTEwLTE0VDA3OjI4OjAwLjAwMFoiLCJpYXQiOjE2MDI1NzE5OTEsImV4cCI6MTYwMzg2Nzk5MX0.C-MRpF8WurIzDrSbKemoUY6OKZ4epno7GxuMWbVrL9o",
+                        "description": "로그인시 생성되는 토큰",
+                        "required": true
+                    }
+                ],
+                "requestBody": {},
+                "responses": {
+                    "200": {
+                        "description": "add Result",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BallotModel"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Result error",
+                        "scheam": {
+                            "type": "integer"
+                        }
+                    }
+                }
+            }
+        },
         "/api/vote/{election}/ballot": {
             "get": {
                 "tags": [
@@ -1816,14 +1859,6 @@
                         "format": "int64"
                     },
                     {
-                        "name": "index",
-                        "in": "query",
-                        "description": "검색 조건( 1 : 성명, 2: 연락처, 3: 투표여부) ",
-                        "type": "integer",
-                        "required": false,
-                        "format": "int64"
-                    },
-                    {
                         "name": "search",
                         "in": "query",
                         "description": "검색 데이터",
@@ -1899,7 +1934,86 @@
                         "format": "int64"
                     }
                 ],
+                "deprecated": true,
                 "requestBody": {},
+                "responses": {
+                    "200": {
+                        "description": "add Result",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "susccess": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": null
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/VostListModel"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Result error",
+                        "scheam": {
+                            "type": "integer"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/vote/election/result": {
+            "post": {
+                "tags": [
+                    "vote"
+                ],
+                "summary": "투표  개표",
+                "description": "투표 개표",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "x-access-token",
+                        "in": "header",
+                        "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVuZGRhdGUiOiIyMDIwLTEwLTE0VDA3OjI4OjAwLjAwMFoiLCJpYXQiOjE2MDI1NzE5OTEsImV4cCI6MTYwMzg2Nzk5MX0.C-MRpF8WurIzDrSbKemoUY6OKZ4epno7GxuMWbVrL9o",
+                        "description": "로그인시 생성되는 토큰",
+                        "required": true
+                    }
+                ],
+                "requestBody": {
+                    "description": "선거 인덱스는 필수",
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "election": {
+                                        "type": "string",
+                                        "format": "string",
+                                        "description": "선거 인덱스"
+                                    }
+                                },
+                                "required": [
+                                    "election"
+                                ]
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "add Result",
@@ -2118,6 +2232,22 @@
                         "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVuZGRhdGUiOiIyMDIwLTEwLTE0VDA3OjI4OjAwLjAwMFoiLCJpYXQiOjE2MDI1NzE5OTEsImV4cCI6MTYwMzg2Nzk5MX0.C-MRpF8WurIzDrSbKemoUY6OKZ4epno7GxuMWbVrL9o",
                         "description": "로그인시 생성되는 토큰",
                         "required": true
+                    },
+                    {
+                        "name": "start",
+                        "in": "query",
+                        "description": "시작날짜",
+                        "required": false,
+                        "type": "string",
+                        "format": "date"
+                    },
+                    {
+                        "name": "end",
+                        "in": "query",
+                        "description": "끝 날짜",
+                        "required": false,
+                        "type": "string",
+                        "format": "date"
                     }
                 ],
                 "requestBody": {},

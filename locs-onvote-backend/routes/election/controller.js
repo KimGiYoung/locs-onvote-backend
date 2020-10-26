@@ -79,6 +79,18 @@ controller.getElectionShortList = async (req, res, next) => {
 
 }
 
+let isPhoneType = (data) => {
+  const pattern = /[0-9]{3}-[0-9]{3,4}-[0-9]{4}/;
+  return pattern.test(data);
+
+}
+
+let isBirhdayType = (data) => {
+  const pattern = /[0-9]{2}[0-9]{2}[0-9]{2}/;
+  return pattern.test(data);
+}
+
+
 controller.setElectionList = async (req, res, next) => {
   const { id } = req.decoded
   const { name, start_dt, end_dt, start_preview, end_preview, option, extension } = req.body
@@ -103,19 +115,34 @@ controller.setElectionList = async (req, res, next) => {
 
     const jsonData = xlsx.utils.sheet_to_json(firstSheet, { defval: "" });
     let values = [];
+    let nNamelist = Object.keys(jsonData[0])
+    let namelist = ["이름", "생년월일", "핸드폰", "성별"]
+    if (nNamelist.join() !== namelist.join()) {
+      return res.json(Results.onFailure("형식이 맞지 않습니다."))
+    }
+
     for (let i = 0; i < jsonData.length; i++) {
+      if (isBirhdayType(jsonData[i].생년월일) == false) {
+        await connection.rollback()
+        return res.json(Results.onFailure(jsonData[i].이름 + "님의 생년월일유형이 잘못되었습니다."))
+      }
+
+      if (isPhoneType(jsonData[i].핸드폰) == false) {
+        await connection.rollback()
+        return res.json(Results.onFailure(jsonData[i].이름 + "님의 핸드폰유형이 잘못되었습니다."))
+      }
       values.push([election, jsonData[i].이름, jsonData[i].생년월일, jsonData[i].핸드폰, jsonData[i].성별, nanoid.nanoid(10)])
 
     }
     const [data1] = await connection.query('INSERT INTO  voter(election_id, username, birthday, phone, gender, code) VALUES  ?', [values])
 
     const reuslt = { id: data.insertId, count: data1.affectedRows }
-    connection.commit()
+    await connection.commit()
     connection.release()
     return res.json(Results.onSuccess(reuslt))
 
   } catch (error) {
-    connection.rollback()
+    await connection.rollback()
     logger.error(error.stack)
     return res.json(Results.onFailure("ERROR"))
   }
@@ -152,22 +179,28 @@ controller.putElectionList = async (req, res, next) => {
       // @details 엑셀 파일의 첫번째 시트를 읽어온다.
 
       const jsonData = xlsx.utils.sheet_to_json(firstSheet, { defval: "" });
+      let nNamelist = Object.keys(jsonData[0])
+      let namelist = ["이름", "생년월일", "핸드폰", "성별"]
+      if (nNamelist.join() !== namelist.join()) {
+        return res.json(Results.onFailure("형식이 맞지 않습니다."))
+      }
       let values = [];
       for (let i = 0; i < jsonData.length; i++) {
+
         values.push([election, jsonData[i].이름, jsonData[i].생년월일, jsonData[i].핸드폰, jsonData[i].성별, nanoid.nanoid(10)])
       }
       await connection.query('DELETE FROM voter WHERE election_id = ?', [election])
       const [data1] = await connection.query('INSERT INTO voter(election_id, username, birthday, phone, gender, code) VALUES  ?', [values])
-      connection.commit()
+      await connection.commit()
       connection.release()
       return res.json(Results.onSuccess(data1.affectedRows))
     }
-    connection.commit()
+    await connection.commit()
     connection.release()
     return res.json(Results.onSuccess(1))
 
   } catch (error) {
-    connection.rollback()
+    await connection.rollback()
     logger.error(error.stack)
     return res.json(Results.onFailure("ERROR"))
   }
@@ -353,7 +386,7 @@ controller.putCandidate = async (req, res, next) => {
       }
     }
 
-    connection.commit()
+    await connection.commit()
     connection.release()
     return res.json(Results.onSuccess({ id: candidate }))
 

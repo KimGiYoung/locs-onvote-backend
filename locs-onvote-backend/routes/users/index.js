@@ -8,7 +8,11 @@ router.get('/', controller.getTest);
 
 
 
-router.post('/reuslttest', controller.setCandidateTest);
+router.post('/reuslttest', controller.setCandidateAllTest);
+router.post('/abtest', controller.setCandidateAllTest);
+
+
+
 
 router.post('/login', controller.getUserLogin)
 router.get('/list', controller.isLoginCheck, controller.getElectionList)
@@ -17,8 +21,6 @@ router.get('/:election/list', controller.isLoginCheck, controller.getCandidateLi
 router.post('/:election/list', controller.isLoginCheck, controller.setCandidateList)
 
 
-router.post('/ballotlogin', controller.getBallotLogin)
-router.get('/ballot/list', controller.isBallotLoginCheck)
 
 
 

@@ -10,6 +10,7 @@
     "app-root-path": "^3.0.0",
     "body-parser": "^1.19.0",
     "cookie-parser": "~1.4.4",
+    "cors": "^2.8.5",
     "crypt": "0.0.2",
     "debug": "~2.6.9",
     "express": "~4.16.1",

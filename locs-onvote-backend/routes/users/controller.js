@@ -41,38 +41,6 @@ controller.istokenCheck = (req, res, next) => {
   })
 }
 
-
-controller.isBallotLoginCheck = (req, res, next) => {
-  const token = req.headers['x-access-token'];
-  const files = req.files
-
-  jwt.verify(token, 'locsballot_ak', (err, decoded) => {
-    if (err) {
-      logger.error(err)
-      return res.json(Results.onFailure("잘못된 접근입니다"))
-    }
-    else {
-      req.files = files
-      req.decoded = decoded;
-      next();
-    }
-  })
-}
-controller.isBallottokenCheck = (req, res, next) => {
-  const token = req.headers['x-refresh-token'];
-  jwt.verify(token, 'locsballot_rk', (err, decoded) => {
-    if (err) {
-      logger.error(err)
-      return res.json(Results.onFailure("잘못된 접근입니다"))
-    }
-    else {
-      req.decoded = decoded;
-
-      next();
-    }
-  })
-}
-
 controller.getUserLogin = async (req, res, next) => {
   const { code, phone } = req.body
 
@@ -164,48 +132,12 @@ controller.setCandidateList = async (req, res, next) => {
 
 
     }
-    connection.commit()
+    await connection.commit()
     connection.release()
 
     return res.json(Results.onSuccess({ id: candidate }))
   } catch (error) {
-    connection.rollback()
-    logger.error(error.stack)
-    return res.json(Results.onFailure("ERROR"))
-  }
-}
-
-
-controller.getBallotLogin = async (req, res, next) => {
-  const { code, phone } = req.body
-
-  const strquery = "%" + phone
-
-
-  // 선거가 진행중일때만 조회할수잇도록 한다 예외처리 해야됨
-
-  try {
-
-    const [[user]] = await pool.query('SELECT voter.username, voter.birthday, voter.phone FROM ballot, voter WHERE ballot.code = ? AND ballot.voter_id = voter.id AND voter.phone LIKE (?)', [code, strquery])
-
-    if (user == undefined) return res.json(Results.onFailure("잘못된 권한 코드 입니다"))
-    const payload = {
-      username: user.username,
-      birthday: user.birthday,
-      phone: user.phone
-    }
-
-    const access_token = jwt.sign(payload, "locsballot_ak", { expiresIn: '15d' })
-    const refresh_token = jwt.sign(payload, "locsballot_rk", { expiresIn: '365d' })
-
-    const result = {
-      username: user.username,
-      phone: user.phone,
-      ak: access_token,
-      rk: refresh_token
-    }
-    return res.json(Results.onSuccess(result))
-  } catch (error) {
+    await connection.rollback()
     logger.error(error.stack)
     return res.json(Results.onFailure("ERROR"))
   }
@@ -213,7 +145,7 @@ controller.getBallotLogin = async (req, res, next) => {
 
 
 
-controller.setCandidateTest = async (req, res, next) => {
+controller.setCandidateAllTest = async (req, res, next) => {
 
   const { election } = req.body
 
@@ -240,12 +172,46 @@ controller.setCandidateTest = async (req, res, next) => {
     await connection.query('UPDATE voter SET flag =1, votedate = now() WHERE election_id = ? AND flag = 0', [election])
     await connection.query('INSERT INTO vote_result VALUES ?', [votereuslt])
 
-    connection.commit()
+    await connection.commit()
     connection.release()
 
     return res.json(Results.onSuccess({ id: candidate }))
   } catch (error) {
-    connection.rollback()
+    await connection.rollback()
+    logger.error(error.stack)
+    return res.json(Results.onFailure("ERROR"))
+  }
+}
+
+
+controller.setCandidateTest = async (req, res, next) => {
+
+  const { election } = req.body
+
+  // 선거가 진행중일때만 조회할수잇도록 한다 예외처리 해야됨    
+  let connection = await pool.getConnection(async conn => conn)
+  try {
+    // 유권자 검사
+    connection.beginTransaction()
+    const [[user]] = await connection.query('SELECT * FROM voter WHERE flag = 0 AND  election_id = ? limit 1', [election])
+    const [candidate] = await connection.query('SELECT id FROM candidate WHERE  election_id = ?', [election])
+
+    const lcandidate = candidate.map(data => {
+      return data.id
+    })
+    lcandidate.push(null)
+
+    if (user == undefined) return res.json(Results.onFailure("변경할 데이터가 없습니다"))
+
+    await connection.query('UPDATE voter SET flag =1, votedate = now() WHERE election_id = ? AND flag = 0 AND id = ?', [election, user.id])
+    await connection.query('INSERT INTO vote_result VALUES (?, ?)', [election, lcandidate[Math.floor(Math.random() * lcandidate.length)]])
+
+    await connection.commit()
+    connection.release()
+
+    return res.json(Results.onSuccess({ id: candidate }))
+  } catch (error) {
+    await connection.rollback()
     logger.error(error.stack)
     return res.json(Results.onFailure("ERROR"))
   }
