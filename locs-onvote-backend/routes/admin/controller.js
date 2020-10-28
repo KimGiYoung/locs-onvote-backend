@@ -12,24 +12,6 @@ let controller = {}
 
 controller.getTest = async (req, res, next) => {
   try {
-    console.log("12312312")
-    // rp('http://www.google.com')
-    //   .then(function (htmlString) {
-    //     // Process html...
-    //     console.log(htmlString)
-    //     console.log(11)
-    //     console.log("1: " + new Date())
-    //   })
-    //   .catch(function (err) {
-    //     // Crawling failed...
-    //     console.log("2: " + new Date())
-    //   });
-    // console.log("0: " + new Date())
-    const testurl = () => {
-      return axios.get('http://127.0.0.1:3000/api/users')
-    }
-
-    let promises = []
     // let [data] = await pool.query(`SELECT MIN(voter.id) AS id, username, REPLACE(phone,"-","") AS phone , MIN(code) AS code, COUNT(phone) as count FROM voter, election WHERE voter.election_id = election.id AND start_dt = '2020-10-26 14:00:00' GROUP BY voter.phone, voter.username ORDER BY voter.username`, [])
     let [data] = await pool.query(`SELECT MIN(voter.id) AS id, username, REPLACE(phone,"-","") AS phone , MIN(code) AS code, COUNT(phone) as count  FROM voter, election WHERE voter.election_id = election.id GROUP BY voter.phone, voter.username ORDER BY voter.username`)
     let test = data.map(data => {
@@ -47,13 +29,38 @@ controller.getTest = async (req, res, next) => {
     })
 
     // let test = await Promise.all(axios.all(promises).then((data) => { return data.data }))
-    let test1 = await Promise.all(test).then((response) => {
+    let promises = await Promise.all(test).then((response) => {
       return response.map(data => {
         return data.data
       })
     })
-    console.log(test1)
-    return res.json(test1)
+
+    return res.json(promises)
+  }
+  catch (e) {
+    return res.json(e)
+  }
+}
+
+controller.getTest2 = async (req, res, next) => {
+  const { election } = req.query
+  try {
+
+    // let [data] = await pool.query(`SELECT MIN(voter.id) AS id, username, REPLACE(phone,"-","") AS phone , MIN(code) AS code, COUNT(phone) as count FROM voter, election WHERE voter.election_id = election.id AND start_dt = '2020-10-26 14:00:00' GROUP BY voter.phone, voter.username ORDER BY voter.username`, [])
+    let [data] = await pool.query(` 
+    SELECT id, username FROM voter WHERE voter.election_id = ${election} ORDER BY id   
+    `)
+    let test = data.map(data => {
+      return axios.post('http://127.0.0.1:3000/api/users/abtest', { id: data.id, election })
+    })
+
+    let promises = await Promise.all(test).then((response) => {
+      return response.map(data => {
+        return data.data
+      })
+    })
+
+    return res.json(promises)
   }
   catch (e) {
     return res.json(e)
@@ -95,14 +102,12 @@ controller.getAdminLogin = async (req, res, next) => {
   const { id, password } = req.body;
 
   try {
+    const [[user]] = await pool.query('select *,UNIX_TIMESTAMP(enddate) as end from admin where username = ? and password = ?', [id, password])
 
-    const data = await pool.query('select * from admin where username = ? and password = ?', [id, password])
-
-    if (data[0].length === 0) {
+    if (user == undefined) {
       return res.json(Results.onFailure("아이디나 패스워드가 틀렸습니다"))
       // return res.status(400).json(Results.onFailure("아이디나 패스워드가 틀렸습니다."))
     }
-    const user = data[0][0]
 
     const date = new Date()
 
@@ -115,8 +120,8 @@ controller.getAdminLogin = async (req, res, next) => {
       enddate: user.enddate
     }
     await pool.query('update admin set last_login = now() where id = ?', [user.id])
-    const access_token = jwt.sign(payload, "locsadmin_ak", { expiresIn: '15d' })
-    const refresh_token = jwt.sign(payload, "locsadmin_rk", { expiresIn: '365d' })
+    const access_token = jwt.sign(payload, "locsadmin_ak", { expiresIn: '5m' })
+    const refresh_token = jwt.sign(payload, "locsadmin_rk", { expiresIn: Math.floor(user.end - (date.getTime() / 1000)) })
     const result = {
       username: user.username,
       option: user.noption,
@@ -142,6 +147,45 @@ controller.putAdminOption = async (req, res, next) => {
   } catch (e) {
     logger.error(e)
     return res.json(Results.onFailure("ERROR"))
+  }
+}
+
+controller.TokenReissue = async (req, res, next) => {
+  try {
+    const { id } = req.decoded;
+    const [[user]] = await pool.query('select *,UNIX_TIMESTAMP(enddate) as end from admin where id = ? ?', [id])
+
+    if (user == undefined) {
+      return res.json(Results.onFailure("아이디나 패스워드가 틀렸습니다"))
+      // return res.status(400).json(Results.onFailure("아이디나 패스워드가 틀렸습니다."))
+    }
+
+    const date = new Date()
+
+    if (user.enddate < date) {
+      return res.json(Results.onFailure("기간이 만료되었습니다"))
+    }
+    const payload = {
+      id: user.id,
+      username: user.username,
+      enddate: user.enddate
+    }
+    await pool.query('update admin set last_login = now() where id = ?', [user.id])
+    const access_token = jwt.sign(payload, "locsadmin_ak", { expiresIn: '5m' })
+    const refresh_token = jwt.sign(payload, "locsadmin_rk", { expiresIn: Math.floor(user.end - (date.getTime() / 1000)) })
+    const result = {
+      username: user.username,
+      option: user.noption,
+      ak: access_token,
+      rk: refresh_token
+    }
+
+    return res.json(Results.onSuccess(result))
+  }
+
+  catch (e) {
+    logger.error(e)
+    return res.json(Results.onFailure("재발행 토큰 에러"))
   }
 }
 

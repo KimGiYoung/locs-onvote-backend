@@ -26,7 +26,7 @@ controller.getballotList = async (req, res, next) => {
   const { id } = req.decoded
   const { election } = req.params
   try {
-    const [data] = await pool.query('SELECT ballot.id, ballot.flag, ballot.ballotdate, voter.username, voter.phone, voter.birthday FROM ballot, voter WHERE voter.id = ballot.voter_id AND ballot.election_id =? ', [election])
+    const [data] = await pool.query('SELECT ballot.id, ballot.flag, ballot.ballotdate, voter.username, voter.phone, voter.birthday FROM ballot, voter WHERE voter.id = ballot.voter_id AND ballot.election_id =? ORDER BY ballot.id ', [election])
 
     return res.json(Results.onSuccess(data))
   } catch (error) {
@@ -41,7 +41,7 @@ controller.setballotList = async (req, res, next) => {
   const { voter_id } = req.body
   try {
 
-    const [voter] = await pool.query('SELECT phone FROM voter WHERE id = ?', [voter_id])
+    const [voter] = await pool.query('SELECT phone FROM voter WHERE id = ? ', [voter_id])
 
     if (voter.length == 0) {
       return res.json(Results.onFailure("후보자 정보가 없습니다"))
@@ -68,7 +68,7 @@ controller.setballotList = async (req, res, next) => {
       if (check != undefined) return res.json(Results.onFailure("등록된 개표확인자 입니다"))
       const [data] = await pool.query('INSERT INTO  ballot(election_id, voter_id, flag, code) VALUES (?, ?, ?, ?)', [election, voter_id, 0, nanoid(10)])
       await pool.query(`
-        UPDATE ballot AS b1, voter AS v1, (SELECT ballot.id, MIN(ballot.code) AS code, voter.phone  FROM  ballot, voter WHERE ballot.voter_id = voter.id  GROUP BY voter.username, voter.phone) AS b2
+        UPDATE ballot AS b1, voter AS v1, (SELECT MIN(ballot.code) AS code, voter.phone  FROM  ballot, voter WHERE ballot.voter_id = voter.id  GROUP BY voter.username, voter.phone) AS b2
         SET b1.code= b2.code
         WHERE v1.phone = b2.phone AND b1.voter_id = v1.id 
       `, [])
@@ -175,14 +175,13 @@ controller.putElectionInvalid = async (req, res, next) => {
   const electionlist = election.split(',')
   let connection = await pool.getConnection(async conn => conn)
   try {
-    connection.beginTransaction()
+    await connection.beginTransaction()
 
     let bElection = electionlist.map(async data => {
       const [[check]] = await connection.query('SELECT name,flag FROM election WHERE id = ?', [data])
 
       if (check == undefined) return -1
       if (check.flag == 2 || check.flag == 3) {
-        console.log("선거 무효를 할수 없습니다")
         return 1
       }
       await connection.query('UPDATE election SET flag = 3 WHERE id = ?', [data])
@@ -191,7 +190,8 @@ controller.putElectionInvalid = async (req, res, next) => {
     })
     let bElection_check = await Promise.all(bElection)
     if (bElection_check.indexOf(1) != -1) {
-      connection.rollback()
+      await connection.rollback()
+      connection.release()
       return res.json(Results.onFailure("선거 무효를 할수 없습니다"))
 
     }
@@ -201,6 +201,7 @@ controller.putElectionInvalid = async (req, res, next) => {
     return res.json(Results.onSuccess({ id: electionlist }))
   } catch (error) {
     await connection.rollback()
+    connection.release()
     logger.error(error.stack)
     return res.json(Results.onFailure("ERROR"))
   }
@@ -215,7 +216,7 @@ controller.putElectionAddDate = async (req, res, next) => {
   const tEnd = new Date(end).toLocaleString('ko-KR', { hour12: false })
 
   try {
-    connection.beginTransaction()
+    await connection.beginTransaction()
 
     let bElection = electionlist.map(async data => {
       const [[check]] = await connection.query('SELECT name,flag, extension FROM election WHERE id = ?', [data])
@@ -230,7 +231,8 @@ controller.putElectionAddDate = async (req, res, next) => {
     let bElection_check = await Promise.all(bElection)
 
     if (bElection_check.indexOf(1) != -1) {
-      connection.rollback()
+      await connection.rollback()
+      connection.release()
       return res.json(Results.onFailure("선거 연장수 없습니다"))
 
     }
@@ -240,6 +242,7 @@ controller.putElectionAddDate = async (req, res, next) => {
     return res.json(Results.onSuccess({ id: electionlist }))
   } catch (error) {
     await connection.rollback()
+    connection.release()
     logger.error(error.stack)
     return res.json(Results.onFailure("ERROR"))
   }

@@ -3,7 +3,7 @@ module.exports = {
     port: 3306,
     user: 'locs',
     password: 'locslab',
-    connectionLimit: 10,
+    connectionLimit: 100,
     database: 'onvote',
     timezone: 'Asia/Seoul'
 };
