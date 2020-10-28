@@ -34,7 +34,9 @@ app.use(express.static(path.join(__dirname, 'build')));
 // });
 app.use('/api', indexRouter);
 app.use('/uploads', express.static("uploads"));
-app.use('/', express.static("build"))
+app.use('/*', (req, res) => {
+  res.sendFile(path.join(__dirname, "./build/", "index.html"));
+})
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

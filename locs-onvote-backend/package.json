@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "pm2 start ./bin/www --name VoteOn -i 2 --watch --ignore-watch=\"upload/* node_modules/*\" --log-date-format=\"YYYY-MM-DD HH:mm Z\" ",
+    "start": "pm2 start ./bin/www --name VoteOn -i 2 --watch --ignore-watch=\"uploads/* node_modules/*\" --log-date-format=\"YYYY-MM-DD HH:mm Z\" ",
     "debug": "$env:DEBUG=\"*\" & node ./bin/www"
   },
   "dependencies": {
