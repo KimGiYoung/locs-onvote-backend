@@ -7,6 +7,7 @@ var router = express.Router();
 router.get('/', controller.getTest);
 router.get('/:election/ballot', admin.isLoginCheck, controller.getballotList)           // 개표확인자 리스트 조회
 router.post('/:election/ballot', admin.isLoginCheck, controller.setballotList)          // 개표확인자 추가
+
 router.delete('/:election/ballot/:ballot', admin.isLoginCheck, controller.deleteballotList)    // 개표확인자 삭제
 router.get('/:election/ballot/:ballot', admin.isLoginCheck, controller.getDetailballot)    // 개표확인자 
 
