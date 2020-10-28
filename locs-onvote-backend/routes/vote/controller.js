@@ -67,6 +67,12 @@ controller.setballotList = async (req, res, next) => {
       const [[check]] = await pool.query('SELECT * FROM ballot WHERE election_id = ? AND voter_id = ?', [election, voter_id])
       if (check != undefined) return res.json(Results.onFailure("등록된 개표확인자 입니다"))
       const [data] = await pool.query('INSERT INTO  ballot(election_id, voter_id, flag, code) VALUES (?, ?, ?, ?)', [election, voter_id, 0, nanoid(10)])
+      await pool.query(`
+        UPDATE ballot AS b1, voter AS v1, (SELECT ballot.id, MIN(ballot.code) AS code, voter.phone  FROM  ballot, voter WHERE ballot.voter_id = voter.id  GROUP BY voter.username, voter.phone) AS b2
+        SET b1.code= b2.code
+        WHERE v1.phone = b2.phone AND b1.voter_id = v1.id 
+      `, [])
+
       return res.json(Results.onSuccess({ id: data.insertId }))
     }
 
@@ -135,7 +141,7 @@ controller.getVoteList = async (req, res, next) => {
 
   try {
     if (search !== undefined && search !== "null") {
-      query += `AND (username LIKE ('%${search}') OR phone LIKE('%${search}') OR birthday LIKE ('%${search}')) `
+      query += `AND (username LIKE ('%${search}%') OR phone LIKE('%${search}%') OR birthday LIKE ('%${search}%')) `
     }
     if (flag != "null" && flag !== undefined) {
       query += `AND flag = ${flag} `
@@ -172,7 +178,7 @@ controller.putElectionInvalid = async (req, res, next) => {
     connection.beginTransaction()
 
     let bElection = electionlist.map(async data => {
-      const [[check]] = await connection.query('SELECT flag FROM election WHERE id = ?', [data])
+      const [[check]] = await connection.query('SELECT name,flag FROM election WHERE id = ?', [data])
 
       if (check == undefined) return -1
       if (check.flag == 2 || check.flag == 3) {
@@ -180,6 +186,7 @@ controller.putElectionInvalid = async (req, res, next) => {
         return 1
       }
       await connection.query('UPDATE election SET flag = 3 WHERE id = ?', [data])
+      await connection.query('INSERT INTO vote_logs(ip, admin_id, text) VALUES (?,?,?)', [logger.getIP(req), id, `[${check.name}]선거 무효하였습니다`])
       return 0
     })
     let bElection_check = await Promise.all(bElection)
@@ -211,11 +218,12 @@ controller.putElectionAddDate = async (req, res, next) => {
     connection.beginTransaction()
 
     let bElection = electionlist.map(async data => {
-      const [[check]] = await connection.query('SELECT flag, extension FROM election WHERE id = ?', [data])
+      const [[check]] = await connection.query('SELECT name,flag, extension FROM election WHERE id = ?', [data])
       if (check.flag == 2 || check.flag == 3 || check.extension == 0) {
         return 1
       }
       await connection.query('UPDATE election SET end_dt = ? WHERE id = ?', [tEnd, data])
+      await connection.query('INSERT INTO vote_logs(ip, admin_id, text) VALUES (?,?,?)', [logger.getIP(req), id, `[${check.name}]선거 연장하였습니다`])
       return 0
     })
 
@@ -243,9 +251,8 @@ controller.getElectionCounting = async (req, res, next) => {
   // const {  } = req.params
 
   try {
-    const [data] = await pool.query('SELECT election.id, election.name,  COUNT(ballot.election_id) AS total , COUNT(IF(ballot.flag=1, 1, NULL)) AS COUNT  FROM election LEFT JOIN ballot ON election.id = ballot.`election_id` WHERE election.flag = 2 AND election.admin_id = ? GROUP BY election.id ORDER BY election.id ', [id])
+    const [data] = await pool.query('SELECT election.id, election.name,  COUNT(ballot.election_id) AS total , COUNT(IF(ballot.flag=1, 1, NULL)) AS count  FROM election LEFT JOIN ballot ON election.id = ballot.`election_id` WHERE election.flag = 2 AND election.admin_id = ? AND election.voteflag = 0 GROUP BY election.id ORDER BY election.id ', [id])
 
-    if (data.length == 0) return res.json(Results.onFailure("완료된 선거가 없습니다"))
     return res.json(Results.onSuccess(data))
   } catch (error) {
     logger.error(error.stack)
@@ -282,7 +289,7 @@ controller.setElectionGroupCounting = async (req, res, next) => {
   try {
 
     const [ballot] = await pool.query(`
-      SELECT election.id, election.name, COUNT(ballot.election_id) AS total , COUNT(IF(ballot.flag=1, 1, NULL)) AS COUNT  FROM 
+      SELECT election.id, election.name, COUNT(ballot.election_id) AS total , COUNT(IF(ballot.flag=1, 1, NULL)) AS count  FROM 
       election LEFT JOIN ballot ON election.id = ballot.election_id WHERE election.flag = 2 AND election.admin_id = ?
       AND election.id IN (?)
       GROUP BY election.id      
@@ -290,6 +297,7 @@ controller.setElectionGroupCounting = async (req, res, next) => {
     `, [id, electionlist])
 
     for (let data of ballot) {
+      console.log(data.total, data.count)
       if (data.total != data.count) return res.json(Results.onFailure("모든 개표확인자가 확인하지 않았습니다"))
     }
 
@@ -321,7 +329,7 @@ controller.getVoteResult = async (req, res, next) => {
     }
 
     const [eleciton] = await pool.query(query, [])
-    if (eleciton.length == 0) return res.json(Results.onSuccess())
+    if (eleciton.length == 0) return res.json(Results.onSuccess(eleciton))
     const result = eleciton.map(async data => {
       let json = {}
       json = data
@@ -504,5 +512,20 @@ controller.getVoteResultExcel = async (req, res, next) => {
     return res.json(Results.onFailure("ERROR"))
   }
 }
+
+controller.getVoteLogs = async (req, res, next) => {
+  const { id } = req.decoded
+  try {
+
+    const [logs] = await pool.query(`SELECT ip, create_date, text FROM vote_logs WHERE admin_id = ? ORDER BY create_date desc limit 50`, [id])
+
+
+    return res.json(Results.onSuccess(logs))
+  } catch (error) {
+    logger.error(error.stack)
+    return res.json(Results.onFailure("ERROR"))
+  }
+}
+
 
 module.exports = controller;

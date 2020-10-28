@@ -5,11 +5,12 @@ var router = express.Router();
 
 /* GET users listing. */
 router.get('/', controller.getTest);
+router.post('/', controller.getPostTest);
 
 
 
 router.post('/reuslttest', controller.setCandidateAllTest);
-router.post('/abtest', controller.setCandidateAllTest);
+router.post('/abtest', controller.setCandidateTest);
 
 
 

@@ -135,7 +135,11 @@ controller.setElectionList = async (req, res, next) => {
 
     }
     const [data1] = await connection.query('INSERT INTO  voter(election_id, username, birthday, phone, gender, code) VALUES  ?', [values])
-
+    await connection.query(`
+      UPDATE voter AS b1, (SELECT username, phone , MIN(code) AS code FROM voter GROUP BY phone, username ) AS b2
+      SET b1.code=b2.code
+      WHERE b1.phone = b2.phone 
+    `, [])
     const reuslt = { id: data.insertId, count: data1.affectedRows }
     await connection.commit()
     connection.release()
@@ -305,7 +309,10 @@ controller.setCandidate = async (req, res, next) => {
       return res.json(Results.onFailure("후보자 정보가 없습니다"))
     }
 
-    const [[data]] = await pool.query('SELECT noption FROM election WHERE id = ?', [election])
+    const [[data]] = await pool.query('SELECT flag,noption FROM election WHERE id = ?', [election])
+
+    let flag = data.flag
+    if (flag == 1) return res.json(Results.onFailure("선거가 시작중입니다"))
     if (data.noption == 0) //단일
     {
       let [[check1]] = await pool.query('SELECT COUNT(*) AS count FROM candidate WHERE election_id = ?', [election])

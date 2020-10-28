@@ -2,9 +2,10 @@
     "apps": [
         {
             "name": "VoteOn",
-            "exec_mode": "fork",
+            "exec_mode": "cluster",
             "watch": false,
-            "instances": "1",
+            "instances": 2,
+            "log-date-format": "YYYY-MM-DD HH:mm Z",
             "script": "./bin/www"
         }
     ]

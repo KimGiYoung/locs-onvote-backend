@@ -1,3 +1,4 @@
 locs-onvote-backend/node_modules/*
 locs-onvote-backend/uploads/*
 locs-onvote-backend/logs/*
+locs-onvote-backend/build/*

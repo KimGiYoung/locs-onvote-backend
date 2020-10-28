@@ -15,12 +15,15 @@ cron.schedule('*/1 * * * *', async () => {
                     const [[candidate]] = await pool.query('SELECT COUNT(*) as count FROM candidate WHERE election_id=?', [data.id])
                     if (candidate.count == 0) {
                         // 투표 현황 로그에 반영해야됨
-                        await pool.query('INSERT INTO vote_logs(ip, admin_id, text) VALUES (?,?,?)', [logger.getIP(), data.admin_id, `${data.name} 선거를 시작 할수 없습니다`])
+                        await pool.query('INSERT INTO vote_logs(ip, admin_id, text) VALUES (?,?,?)', [logger.getIP(), data.admin_id, `[${data.name}]선거를 시작 할수 없습니다`])
                         logger.info(data.name + "선거를 시작 할수 없습니다")
                     }
                     else {
                         await pool.query('UPDATE election SET flag = 1 WHERE id=?', [data.id])
-                        await pool.query('INSERT INTO vote_logs(ip, admin_id, text) VALUES (?,?,?)', [logger.getIP(), data.admin_id, `${data.name} 선거 시작 되었습니다`])
+                        await pool.query('INSERT INTO vote_logs(ip, admin_id, text) VALUES (?,?,?)', [logger.getIP(), data.admin_id, `[${data.name}]선거 시작 되었습니다`])
+
+
+
                         logger.info(data.name + "선거 시작 되었습니다.")
                     }
                 }
@@ -45,6 +48,7 @@ cron.schedule('*/1 * * * *', async () => {
                 let now = Math.floor(new Date().getTime() / 1000)
                 if (now >= end_dt) {
                     await pool.query('UPDATE election SET flag = 2 WHERE id=?', [data.id])
+                    await pool.query('INSERT INTO vote_logs(ip, admin_id, text) VALUES (?,?,?)', [logger.getIP(), data.admin_id, `[${data.name}]선거 종료 되었습니다`])
                     logger.info("[" + data.name + "]가 선거 종료 되었습니다.")
                 }
             }

@@ -2369,6 +2369,65 @@
                     }
                 }
             }
+        },
+        "/api/vote/logs": {
+            "get": {
+                "tags": [
+                    "vote"
+                ],
+                "summary": "선거 관련 로그 ",
+                "description": "선거 관련 보기",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "x-access-token",
+                        "in": "header",
+                        "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiIsImVuZGRhdGUiOiIyMDIwLTEwLTE0VDA3OjI4OjAwLjAwMFoiLCJpYXQiOjE2MDI1NzE5OTEsImV4cCI6MTYwMzg2Nzk5MX0.C-MRpF8WurIzDrSbKemoUY6OKZ4epno7GxuMWbVrL9o",
+                        "description": "로그인시 생성되는 토큰",
+                        "required": true
+                    }
+                ],
+                "requestBody": {},
+                "responses": {
+                    "200": {
+                        "description": "add Result",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "susccess": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": null
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/VoteLogsModel"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Result error",
+                        "scheam": {
+                            "type": "integer"
+                        }
+                    }
+                }
+            }
         }
     },
     "components": {
@@ -2656,6 +2715,25 @@
                     "name": {
                         "type": "string",
                         "description": "선거명"
+                    }
+                }
+            },
+            "VoteLogsModel": {
+                "description": "로그 리스트   ",
+                "type": "object",
+                "properties": {
+                    "ip": {
+                        "type": "string",
+                        "description": "발생 아이피"
+                    },
+                    "create_date": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "로그 날짜"
+                    },
+                    "text": {
+                        "type": "string",
+                        "description": "로그 내역"
                     }
                 }
             }

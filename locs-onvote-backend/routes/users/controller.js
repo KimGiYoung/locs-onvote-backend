@@ -6,10 +6,18 @@ const jwt = require("jsonwebtoken");
 let controller = {}
 
 controller.getTest = async (req, res, next) => {
-  const data = await pool.query('select * from voter limit 1')
+  // console.log(new Date())
 
-  return res.json(data[0])
+  return res.json(new Date())
 }
+
+controller.getPostTest = async (req, res, next) => {
+  const { id_type, id, auth_key, msg_type, callback_key, send_id_receive_number, template_code, resend, smg_msg, content } = req.body
+  console.log(id_type, id, auth_key, msg_type, callback_key, send_id_receive_number, template_code, resend, smg_msg, content)
+
+  return res.json(new Date())
+}
+
 controller.isLoginCheck = (req, res, next) => {
   const token = req.headers['x-access-token'];
   const files = req.files

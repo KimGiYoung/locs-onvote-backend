@@ -13,7 +13,6 @@ router.get('/:election/ballot/:ballot', admin.isLoginCheck, controller.getDetail
 router.get('/ballot/list', admin.isLoginCheck, controller.getElectionCounting)
 
 
-
 // router.post('/:election/result', admin.isLoginCheck, controller.setElectionCounting)          // 개별 개표
 router.post('/election/result', admin.isLoginCheck, controller.setElectionGroupCounting)          // 개별 개표
 
@@ -31,5 +30,7 @@ router.put('/date', admin.isLoginCheck, controller.putElectionAddDate)          
 
 router.get('/result', admin.isLoginCheck, controller.getVoteResult)             // 개표 결과
 router.get('/download', admin.isLoginCheck, controller.getVoteResultExcel)             // 개표 결과 다운로드
+
+router.get('/logs', admin.isLoginCheck, controller.getVoteLogs)
 
 module.exports = router;
