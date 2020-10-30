@@ -213,4 +213,39 @@ controller.TokenReissue = async (req, res, next) => {
   }
 }
 
+controller.isAdminElectionCheck = async (req, res, next) => {
+  const { id } = req.decoded
+  const { election } = req.params
+  try {
+    const [[data]] = await pool.query('SELECT * FROM election WHERE id = ? AND admin_id = ?', [election, id])
+    if (data === undefined) {
+      return res.json(Results.onFailure("잘못된 정보 입니다. 고객센터에 문의 바랍니다"))
+    }
+    else {
+      next()
+    }
+  } catch (error) {
+    logger.error(e)
+    return res.json(Results.onFailure("고객센터에 문의 바랍니다"))
+  }
+}
+
+controller.isAdminCandidateCheck = async (req, res, next) => {
+  const { id } = req.decoded
+  const { candidate } = req.params
+  try {
+    const [[data]] = await pool.query('SELECT * FROM election, candidate WHERE election.id = candidate.election_id AND candidate.id = ? AND election.admin_id = ?', [candidate, id])
+    if (data === undefined) {
+      return res.json(Results.onFailure("잘못된 정보 입니다. 고객센터에 문의 바랍니다"))
+    }
+    else {
+      next()
+    }
+  } catch (error) {
+    logger.error(e)
+    return res.json(Results.onFailure("고객센터에 문의 바랍니다"))
+  }
+}
+
+
 module.exports = controller;

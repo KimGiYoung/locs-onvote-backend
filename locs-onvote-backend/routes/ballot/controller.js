@@ -81,7 +81,7 @@ controller.getBallotlist = async (req, res, next) => {
 
   try {
 
-    const [ballot] = await pool.query('SELECT ballot.id, ballot.ballotdate, ballot.flag, election.name FROM ballot, voter, election WHERE ballot.voter_id = voter.id AND  voter.election_id = election.id  AND voter.phone = ? ORDER BY baloot.id', [phone])
+    const [ballot] = await pool.query('SELECT ballot.id, ballot.ballotdate, ballot.flag, election.name FROM ballot, voter, election WHERE ballot.voter_id = voter.id AND  voter.election_id = election.id AND election.flag = 2 AND voter.phone = ? ORDER BY ballot.id', [phone])
 
     return res.json(Results.onSuccess(ballot))
   } catch (error) {
@@ -100,8 +100,8 @@ controller.setBallotlist = async (req, res, next) => {
     if (check.length == 0) return res.json(Results.onFailure("권한 번호가 잘못 되었습니다"))
 
     const nlist = check.map(data => {
-      if (check.flag != 2) return 1
-      if (check.ballotflag == 1) return 2
+      if (data.flag != 2) return 1
+      if (data.ballotflag == 1) return 2
       return 0
     })
 
@@ -109,7 +109,7 @@ controller.setBallotlist = async (req, res, next) => {
       return res.json(Results.onFailure("완료되지 않은 선거 입니다"))
     }
     else if (nlist.indexOf(2) != -1) {
-      return res.json(Results.onFailure("이미 완료된 확인자 입니다"))
+      return res.json(Results.onFailure("이미 승인이 완료된 선거가 있습니다"))
     }
 
     await pool.query('UPDATE ballot SET ballotdate = now(), flag = 1 WHERE id in(?)', [ballotlist])

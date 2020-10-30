@@ -2,7 +2,7 @@ var cron = require('node-cron');
 const pool = require("../database");
 const logger = require('./logger');
 
-if (process.env.NODE_APP_INSTANCE === 0) {
+if (process.env.NODE_APP_INSTANCE === "0") {
     cron.schedule('*/1 * * * *', async () => {
         // 선거 시작 제어
         let connection = await pool.getConnection(async conn => conn)

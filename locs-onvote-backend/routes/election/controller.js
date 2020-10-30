@@ -64,7 +64,7 @@ controller.getElectionShortList = async (req, res, next) => {
   const { flag } = req.query
   const strflag = flag.split(',')
   try {
-    const [data] = await pool.query('SELECT id, name, flag FROM election WHERE admin_id = ? AND flag IN(?) ORDER BY id', [id, strflag])
+    const [data] = await pool.query('SELECT id, name, flag, noption FROM election WHERE admin_id = ? AND flag IN(?) ORDER BY id', [id, strflag])
     return res.json(Results.onSuccess(data))
   } catch (error) {
     logger.error(error.stack)
@@ -311,6 +311,11 @@ controller.getDetailsCandidate = async (req, res, next) => {
   const { id } = req.decoded
   const { candidate } = req.params
   try {
+    const [[check]] = await pool.query('SELECT * FROM election, candidate WHERE election.id = candidate.election_id AND candidate.id = ? AND election.admin_id = ?', [candidate, id])
+    if (check == undefined) {
+      return res.json(Results.onFailure("잘못된 정보 입니다. 고객센터에 문의 바랍니다"))
+    }
+
     const [[data]] = await pool.query('SELECT candidate.*, voter.username FROM candidate, voter WHERE voter.id = candidate.voter_id AND candidate.id = ?', [candidate])
 
     return res.json(Results.onSuccess(data))
@@ -512,5 +517,6 @@ controller.getCandidateList = async (req, res, next) => {
     return res.json(Results.onFailure("고객센터에 문의 바랍니다"))
   }
 }
+
 
 module.exports = controller;

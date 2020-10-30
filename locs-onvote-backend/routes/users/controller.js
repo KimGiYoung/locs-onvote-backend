@@ -83,7 +83,7 @@ controller.getUserLogin = async (req, res, next) => {
 controller.getElectionList = async (req, res, next) => {
   const { phone } = req.decoded
   try {
-    const [data] = await pool.query('SELECT election.id, election.name, election.start_dt, election.end_dt, voter.flag FROM election, voter WHERE election.id = voter.election_id AND election.flag in(1) AND voter.phone = ? ORDER BY election.id', [phone])
+    const [data] = await pool.query('SELECT election.id, election.name, election.noption, election.start_dt, election.end_dt, voter.flag FROM election, voter WHERE election.id = voter.election_id AND election.flag in(1) AND voter.phone = ? ORDER BY election.id', [phone])
     return res.json(Results.onSuccess(data))
   } catch (error) {
     logger.error(error.stack)
@@ -241,14 +241,14 @@ controller.setCandidateTest = async (req, res, next) => {
 }
 
 controller.getCandidateTest = async (req, res, next) => {
-  const { election } = req.query
+  const { election, code } = req.query
 
   // 선거가 진행중일때만 조회할수잇도록 한다 예외처리 해야됨    
   let connection = await pool.getConnection(async conn => conn)
   try {
     // 유권자 검사
     await connection.beginTransaction()
-    const [[user]] = await connection.query('SELECT * FROM voter WHERE flag = 0 AND election_id = ? ORDER BY id LIMIT 1 FOR UPDATE', [election])
+    const [[user]] = await connection.query('SELECT * FROM voter WHERE flag = 0 AND election_id = ? and code = ?', [election, code])
     const [candidate] = await connection.query('SELECT id FROM candidate WHERE  election_id = ?', [election])
 
     const lcandidate = candidate.map(data => {

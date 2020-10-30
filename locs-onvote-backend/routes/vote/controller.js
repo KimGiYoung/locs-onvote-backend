@@ -271,8 +271,16 @@ controller.getElectionCounting = async (req, res, next) => {
 
   try {
     const [data] = await pool.query('SELECT election.id, election.name,  COUNT(ballot.election_id) AS total , COUNT(IF(ballot.flag=1, 1, NULL)) AS count  FROM election LEFT JOIN ballot ON election.id = ballot.`election_id` WHERE election.flag = 2 AND election.admin_id = ? AND election.voteflag = 0 GROUP BY election.id ORDER BY election.id ', [id])
-
-    return res.json(Results.onSuccess(data))
+    const Election = await data.map(async data => {
+      const [[result]] = await pool.query(`
+      SELECT  COUNT(*) AS usertotal, COUNT(IF(voter.flag=1, 1, NULL)) AS usercount
+    FROM election, voter
+     WHERE election.voteflag=1 AND election.flag = 2 AND  election.id = voter.election_id  AND election.id = ?
+      `, [data.id])
+      return { id: data.id, name: data.name, total: data.total, count: data.count, usertotal: result.usertotal, usercount: result.usercount }
+    })
+    let bElection_check = await Promise.all(Election)
+    return res.json(Results.onSuccess(bElection_check))
   } catch (error) {
     logger.error(error.stack)
     return res.json(Results.onFailure("고객센터에 문의 바랍니다"))
@@ -371,7 +379,7 @@ controller.getVoteResult = async (req, res, next) => {
       }
       let voteCount = vote.map(async data => {
         const [[ncount]] = await pool.query(`SELECT COUNT(*) AS count FROM vote_result WHERE candidate_id = ?`, [data.id])
-        return { username: data.username, team: data.team, count: ncount.count }
+        return { username: data.username, team: data.team, count: ncount.count, symbol: data.symbol }
       })
 
 
