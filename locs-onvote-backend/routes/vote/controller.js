@@ -8,7 +8,7 @@ let controller = {}
 controller.getTest = async (req, res, next) => {
   const data = [0, 1, 2, 1, 2, 1, 0, null, null, 0, null]
   const value = data.reduce((allNames, name) => {
-    console.log(name)
+
     if (name in allNames) {
       allNames[name]++
     }
@@ -31,7 +31,7 @@ controller.getballotList = async (req, res, next) => {
     return res.json(Results.onSuccess(data))
   } catch (error) {
     logger.error(error.stack)
-    return res.json(Results.onFailure("ERROR"))
+    return res.json(Results.onFailure("고객센터에 문의 바랍니다"))
   }
 }
 
@@ -40,7 +40,10 @@ controller.setballotList = async (req, res, next) => {
   const { election } = req.params
   const { voter_id } = req.body
   try {
-
+    const [[check]] = await pool.query('SELECT flag FROM election WHERE id = ?', [election])
+    if (check.flag === 2) {
+      return res.json(Results.onFailure("완료된 선거 입니다."))
+    }
     const [voter] = await pool.query('SELECT phone FROM voter WHERE id = ? ', [voter_id])
 
     if (voter.length == 0) {
@@ -78,7 +81,7 @@ controller.setballotList = async (req, res, next) => {
 
   } catch (error) {
     logger.error(error.stack)
-    return res.json(Results.onFailure("ERROR"))
+    return res.json(Results.onFailure("고객센터에 문의 바랍니다"))
   }
 }
 
@@ -88,12 +91,16 @@ controller.deleteballotList = async (req, res, next) => {
   const { id } = req.decoded
   const { election, ballot } = req.params
   try {
-    const [data] = await pool.query('delete FROM ballot WHERE election_id = ? AND id = ?', [election, ballot])
+    const [[check]] = await pool.query('SELECT flag FROM election WHERE id = ?', [election])
+    if (check.flag === 2) {
+      return res.json(Results.onFailure("완료된 선거 입니다."))
+    }
+    const [data] = await pool.query('DELETE FROM ballot WHERE election_id = ? AND id = ?', [election, ballot])
 
     return res.json(Results.onSuccess({ id: ballot }))
   } catch (error) {
     logger.error(error.stack)
-    return res.json(Results.onFailure("ERROR"))
+    return res.json(Results.onFailure("고객센터에 문의 바랍니다"))
   }
 }
 
@@ -109,7 +116,7 @@ controller.getDetailballot = async (req, res, next) => {
     return res.json(Results.onSuccess(data))
   } catch (error) {
     logger.error(error.stack)
-    return res.json(Results.onFailure("ERROR"))
+    return res.json(Results.onFailure("고객센터에 문의 바랍니다"))
   }
 }
 
@@ -124,7 +131,7 @@ controller.getElectionList = async (req, res, next) => {
 
   } catch (error) {
     logger.error(error.stack)
-    return res.json(Results.onFailure("ERROR"))
+    return res.json(Results.onFailure("고객센터에 문의 바랍니다"))
   }
 }
 
@@ -149,7 +156,7 @@ controller.getVoteList = async (req, res, next) => {
     if (start != "null" && end != "null" && start != undefined && end != undefined) {
       query += `AND DATE(votedate) BETWEEN '${start}' AND '${end}'`
     }
-    console.log(query)
+
 
     const [[vote]] = await pool.query(`SELECT count(*) as count FROM voter WHERE election_id = ? ${query}`, [election])
     const totalCount = Number(vote.count)
@@ -164,7 +171,7 @@ controller.getVoteList = async (req, res, next) => {
     return res.json(Results.onSuccess(result))
   } catch (error) {
     logger.error(error.stack)
-    return res.json(Results.onFailure("ERROR"))
+    return res.json(Results.onFailure("고객센터에 문의 바랍니다"))
   }
 }
 
@@ -185,14 +192,14 @@ controller.putElectionInvalid = async (req, res, next) => {
         return 1
       }
       await connection.query('UPDATE election SET flag = 3 WHERE id = ?', [data])
-      await connection.query('INSERT INTO vote_logs(ip, admin_id, text) VALUES (?,?,?)', [logger.getIP(req), id, `[${check.name}]선거 무효하였습니다`])
+      await connection.query('INSERT INTO vote_logs(ip, admin_id, text) VALUES (?,?,?)', [logger.getIP(req), id, `[${check.name}] 선거를 무효하였습니다`])
       return 0
     })
     let bElection_check = await Promise.all(bElection)
     if (bElection_check.indexOf(1) != -1) {
       await connection.rollback()
       connection.release()
-      return res.json(Results.onFailure("선거 무효를 할수 없습니다"))
+      return res.json(Results.onFailure("선거를  무효 할 수 없습니다"))
 
     }
 
@@ -203,7 +210,7 @@ controller.putElectionInvalid = async (req, res, next) => {
     await connection.rollback()
     connection.release()
     logger.error(error.stack)
-    return res.json(Results.onFailure("ERROR"))
+    return res.json(Results.onFailure("고객센터에 문의 바랍니다"))
   }
 }
 
@@ -212,19 +219,28 @@ controller.putElectionAddDate = async (req, res, next) => {
   const { id } = req.decoded
   const { election, end } = req.body
   const electionlist = election.split(',')
-  let connection = await pool.getConnection(async conn => conn)
-  const tEnd = new Date(end).toLocaleString('ko-KR', { hour12: false })
 
+  const tEnd = new Date(end).toLocaleString('ko-KR', { hour12: false })
+  const tReqEnd = Math.floor(new Date(end).getTime() / 1000)
+  const now = Math.floor(new Date().getTime() / 1000)
+  if (now > tReqEnd) {
+    return res.json(Results.onFailure("선거를 연장 할 수 없습니다"))
+  }
+  let connection = await pool.getConnection(async conn => conn)
   try {
     await connection.beginTransaction()
 
     let bElection = electionlist.map(async data => {
-      const [[check]] = await connection.query('SELECT name,flag, extension FROM election WHERE id = ?', [data])
+      const [[check]] = await connection.query('SELECT name,flag, extension, UNIX_TIMESTAMP(start_dt) AS start_dt FROM election WHERE id = ?', [data])
+      if (check.start_dt > tReqEnd) {
+        return 1
+      }
+
       if (check.flag == 2 || check.flag == 3 || check.extension == 0) {
         return 1
       }
       await connection.query('UPDATE election SET end_dt = ? WHERE id = ?', [tEnd, data])
-      await connection.query('INSERT INTO vote_logs(ip, admin_id, text) VALUES (?,?,?)', [logger.getIP(req), id, `[${check.name}]선거 연장하였습니다`])
+      await connection.query('INSERT INTO vote_logs(ip, admin_id, text) VALUES (?,?,?)', [logger.getIP(req), id, `[${check.name}] 선거를 연장하였습니다`])
       return 0
     })
 
@@ -233,7 +249,7 @@ controller.putElectionAddDate = async (req, res, next) => {
     if (bElection_check.indexOf(1) != -1) {
       await connection.rollback()
       connection.release()
-      return res.json(Results.onFailure("선거 연장수 없습니다"))
+      return res.json(Results.onFailure("선거를 연장 할 수 없습니다"))
 
     }
 
@@ -244,7 +260,7 @@ controller.putElectionAddDate = async (req, res, next) => {
     await connection.rollback()
     connection.release()
     logger.error(error.stack)
-    return res.json(Results.onFailure("ERROR"))
+    return res.json(Results.onFailure("고객센터에 문의 바랍니다"))
   }
 }
 
@@ -259,7 +275,7 @@ controller.getElectionCounting = async (req, res, next) => {
     return res.json(Results.onSuccess(data))
   } catch (error) {
     logger.error(error.stack)
-    return res.json(Results.onFailure("ERROR"))
+    return res.json(Results.onFailure("고객센터에 문의 바랍니다"))
   }
 }
 
@@ -280,14 +296,14 @@ controller.setElectionCounting = async (req, res, next) => {
   } catch (error) {
     connection.rollback()
     logger.error(error.stack)
-    return res.json(Results.onFailure("ERROR"))
+    return res.json(Results.onFailure("고객센터에 문의 바랍니다"))
   }
 }
 
 controller.setElectionGroupCounting = async (req, res, next) => {
   const { id } = req.decoded
   const { election } = req.body
-  console.log(election)
+
   const electionlist = election.split(',')
   try {
 
@@ -300,7 +316,6 @@ controller.setElectionGroupCounting = async (req, res, next) => {
     `, [id, electionlist])
 
     for (let data of ballot) {
-      console.log(data.total, data.count)
       if (data.total != data.count) return res.json(Results.onFailure("모든 개표확인자가 확인하지 않았습니다"))
     }
 
@@ -310,7 +325,7 @@ controller.setElectionGroupCounting = async (req, res, next) => {
   } catch (error) {
 
     logger.error(error.stack)
-    return res.json(Results.onFailure("ERROR"))
+    return res.json(Results.onFailure("고객센터에 문의 바랍니다"))
   }
 }
 
@@ -322,13 +337,13 @@ controller.getVoteResult = async (req, res, next) => {
     let query = `SELECT election.id, election.name, election.start_dt, election.end_dt, election.noption, COUNT(*) AS total, COUNT(IF(voter.flag=1, 1, NULL)) AS count
     FROM election, voter
      WHERE election.voteflag=1 AND election.flag = 2 AND  election.id = voter.election_id AND election.admin_id = ${id} 
-    GROUP BY election.id, election.name, election.start_dt, election.end_dt, election.noption  ORDER BY election.id desc `
+    GROUP BY election.id, election.name, election.start_dt, election.end_dt, election.noption  ORDER BY election.id `
 
     if (start != 'null' && end != 'null') {
       query = `SELECT election.id, election.name, election.start_dt, election.end_dt, election.noption, COUNT(*) AS total, COUNT(IF(voter.flag=1, 1, NULL)) AS count
       FROM election, voter
        WHERE election.voteflag=1 AND election.flag = 2 AND  election.id = voter.election_id AND election.admin_id = ${id} AND DATE(election.end_dt) BETWEEN '${start}' AND '${end}'
-      GROUP BY election.id, election.name, election.start_dt, election.end_dt, election.noption  ORDER BY election.id desc   `
+      GROUP BY election.id, election.name, election.start_dt, election.end_dt, election.noption  ORDER BY election.id   `
     }
 
     const [eleciton] = await pool.query(query, [])
@@ -339,13 +354,19 @@ controller.getVoteResult = async (req, res, next) => {
       let num = Math.floor((data.count / data.total) * 100)
       if (num === Infinity) num = 0
       json.rate = num
+
+
+      let [[nullcount]] = await pool.query(`
+      SELECT  COUNT(IF(IFNULL(candidate_id,0)=0, 1, NULL)) AS count FROM vote_result WHERE  election_id = ?
+      `, [data.id])
+
       const [vote] = await pool.query(`
       SELECT candidate.id, candidate.team, candidate.symbol, voter.username FROM voter, candidate WHERE voter.id = candidate.voter_id AND voter.election_id = ?
       `, [data.id])
 
       if (vote.length == 0) {
-        json.data = []
-        json.result = ""
+        json.data = [{ username: "기권", team: "기권", count: nullcount.count }]
+        json.result = "무효"
         return json
       }
       let voteCount = vote.map(async data => {
@@ -353,9 +374,6 @@ controller.getVoteResult = async (req, res, next) => {
         return { username: data.username, team: data.team, count: ncount.count }
       })
 
-      let [[nullcount]] = await pool.query(`
-      SELECT  COUNT(IF(IFNULL(candidate_id,0)=0, 1, NULL)) AS count FROM vote_result WHERE  election_id = ?
-      `, [data.id])
 
 
       let count = await Promise.all(voteCount)
@@ -402,7 +420,7 @@ controller.getVoteResult = async (req, res, next) => {
     return res.json(Results.onSuccess(resjson))
   } catch (error) {
     logger.error(error.stack)
-    return res.json(Results.onFailure("ERROR"))
+    return res.json(Results.onFailure("고객센터에 문의 바랍니다"))
   }
 }
 
@@ -427,7 +445,7 @@ controller.getVoteResultExcel = async (req, res, next) => {
 
 
 
-    let candidate_list = []
+    let candidate_list = {}
     const result = eleciton.map(async data => {
       let json = {}
       json.선거명 = data.name
@@ -437,23 +455,23 @@ controller.getVoteResultExcel = async (req, res, next) => {
       json.유권자 = data.total
       json.투표자 = data.count
 
+
+      let [[nullcount]] = await pool.query(`
+      SELECT  COUNT(IF(IFNULL(candidate_id,0)=0, 1, NULL)) AS count FROM vote_result WHERE  election_id = ?
+      `, [data.id])
+
       const [vote] = await pool.query(`
-      SELECT candidate.id, voter.username FROM voter, candidate WHERE voter.id = candidate.voter_id AND voter.election_id = ?
+      SELECT candidate.id, voter.username FROM voter, candidate WHERE voter.id = candidate.voter_id AND voter.election_id = ? 
       `, [data.id])
 
       if (vote.length == 0) {
-        candidate_list.push([])
+        candidate_list[data.name] = [{ "이름": "기권", "투표수": nullcount.count }]
         return json
       }
       let voteCount = vote.map(async data => {
         const [[ncount]] = await pool.query(`SELECT COUNT(*) AS count FROM vote_result WHERE candidate_id = ?`, [data.id])
         return { "이름": data.username, "투표수": ncount.count }
       })
-
-      let [[nullcount]] = await pool.query(`
-      SELECT  COUNT(IF(IFNULL(candidate_id,0)=0, 1, NULL)) AS count FROM vote_result WHERE  election_id = ?
-      `, [data.id])
-
 
       let count = await Promise.all(voteCount)
 
@@ -463,7 +481,7 @@ controller.getVoteResultExcel = async (req, res, next) => {
         return b["투표수"] - a["투표수"]
       })
 
-
+      candidate_list[data.name] = candidate
       if (data.noption == 0) {
         if (candidate[0].symbol === "찬성") {
           json.result = "가결"
@@ -489,6 +507,7 @@ controller.getVoteResultExcel = async (req, res, next) => {
         if (candidate[0].count === candidate[1].count) {
           json.result = "동점"
         }
+
       }
       return json
     })
@@ -499,10 +518,12 @@ controller.getVoteResultExcel = async (req, res, next) => {
     let book = xlsx.utils.book_new();
     let ws = xlsx.utils.json_to_sheet(resjosn);
     xlsx.utils.book_append_sheet(book, ws, ws_name);
-
+    console.log(Object.keys(candidate_list))
     for (let data1 in resjosn) {
+
       ws_name = resjosn[data1].선거명
-      ws = xlsx.utils.json_to_sheet(candidate_list[data1]);
+      console.log(candidate_list[ws_name])
+      ws = xlsx.utils.json_to_sheet(candidate_list[ws_name]);
       xlsx.utils.book_append_sheet(book, ws, ws_name);
     }
 
@@ -512,7 +533,7 @@ controller.getVoteResultExcel = async (req, res, next) => {
 
   } catch (error) {
     logger.error(error.stack)
-    return res.json(Results.onFailure("ERROR"))
+    return res.json(Results.onFailure("고객센터에 문의 바랍니다"))
   }
 }
 
@@ -526,7 +547,7 @@ controller.getVoteLogs = async (req, res, next) => {
     return res.json(Results.onSuccess(logs))
   } catch (error) {
     logger.error(error.stack)
-    return res.json(Results.onFailure("ERROR"))
+    return res.json(Results.onFailure("고객센터에 문의 바랍니다"))
   }
 }
 

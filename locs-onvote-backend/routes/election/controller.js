@@ -56,7 +56,7 @@ controller.getElectionList = async (req, res, next) => {
     return res.json(Results.onSuccess(data))
   } catch (error) {
     logger.error(error.stack)
-    return res.json(Results.onFailure("ERROR"))
+    return res.json(Results.onFailure("고객센터에 문의 바랍니다"))
   }
 }
 controller.getElectionShortList = async (req, res, next) => {
@@ -68,7 +68,7 @@ controller.getElectionShortList = async (req, res, next) => {
     return res.json(Results.onSuccess(data))
   } catch (error) {
     logger.error(error.stack)
-    return res.json(Results.onFailure("ERROR"))
+    return res.json(Results.onFailure("고객센터에 문의 바랍니다"))
   }
 
 }
@@ -98,7 +98,7 @@ controller.setElectionList = async (req, res, next) => {
   try {
 
     await connection.beginTransaction(); // START TRANSACTION
-    const [data] = await connection.query('INSERT INTO election(admin_id, name, start_dt, end_dt, start_preview, end_preview, flag, noption, extension) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [id, name, tStart_dt, tEnd_dt, tStart_preview, tEnd_preview, 0, option, extension])
+    const [data] = await connection.query('INSERT INTO election(admin_id, name, start_dt, end_dt, start_preview, end_preview, flag, noption, extension, voteflag) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [id, name, tStart_dt, tEnd_dt, tStart_preview, tEnd_preview, 0, option, extension, 0])
     const election = data.insertId
     const excelFile = xlsx.read(file.buffer)
     // @breif 엑셀 파일의 첫번째 시트의 정보를 추출
@@ -108,12 +108,17 @@ controller.setElectionList = async (req, res, next) => {
     // @details 엑셀 파일의 첫번째 시트를 읽어온다.
 
     const jsonData = xlsx.utils.sheet_to_json(firstSheet, { defval: "" });
+    console.log(jsonData)
     let values = [];
+    if (jsonData.length === 0) {
+      connection.release()
+      return res.json(Results.onFailure("유권자 명단 형식이 맞지 않습니다."))
+    }
     let nNamelist = Object.keys(jsonData[0])
     let namelist = ["이름", "생년월일", "핸드폰", "성별"]
     if (nNamelist.join() !== namelist.join()) {
       connection.release()
-      return res.json(Results.onFailure("형식이 맞지 않습니다."))
+      return res.json(Results.onFailure("유권자 명단 형식이 맞지 않습니다."))
     }
 
     for (let i = 0; i < jsonData.length; i++) {
@@ -146,7 +151,7 @@ controller.setElectionList = async (req, res, next) => {
     await connection.rollback()
     connection.release()
     logger.error(error.stack)
-    return res.json(Results.onFailure("ERROR"))
+    return res.json(Results.onFailure("고객센터에 문의 바랍니다"))
   }
 }
 
@@ -167,7 +172,7 @@ controller.putElectionList = async (req, res, next) => {
 
     if (check.flag == 1) {
       connection.release()
-      return res.json(Results.onFailure("현재 진행중입니다."))
+      return res.json(Results.onFailure("현재 선거가 진행중입니다."))
     }
 
     const [[check1]] = await connection.query('SELECT COUNT(*) AS count FROM candidate WHERE election_id =?', [index])
@@ -206,12 +211,16 @@ controller.putElectionList = async (req, res, next) => {
       // @details 엑셀 파일의 첫번째 시트를 읽어온다.
 
       const jsonData = xlsx.utils.sheet_to_json(firstSheet, { defval: "" });
+      if (jsonData.length === 0) {
+        connection.release()
+        return res.json(Results.onFailure("유권자 명단 형식이 맞지 않습니다."))
+      }
       let nNamelist = Object.keys(jsonData[0])
       let namelist = ["이름", "생년월일", "핸드폰", "성별"]
       if (nNamelist.join() !== namelist.join()) {
         await connection.rollback()
         connection.release()
-        return res.json(Results.onFailure("형식이 맞지 않습니다."))
+        return res.json(Results.onFailure("유권자 명단 형식이 맞지 않습니다."))
       }
       let values = [];
       for (let i = 0; i < jsonData.length; i++) {
@@ -241,7 +250,7 @@ controller.putElectionList = async (req, res, next) => {
   } catch (error) {
     await connection.rollback()
     logger.error(error.stack)
-    return res.json(Results.onFailure("ERROR"))
+    return res.json(Results.onFailure("고객센터에 문의 바랍니다"))
   }
 }
 
@@ -254,7 +263,7 @@ controller.deleteElectionList = async (req, res, next) => {
   try {
 
     const [[check]] = await pool.query('SELECT flag FROM election WHERE admin_id = ? AND id = ?', [id, index])
-    if (check.flag === 1) return res.json(Results.onFailure("현재 진행중입니다."))
+    if (check.flag === 1) return res.json(Results.onFailure(" 현재 선거가 진행중입니다"))
     const [[check1]] = await pool.query('SELECT COUNT(*) AS count FROM candidate WHERE election_id =?', [index])
     const [[check2]] = await pool.query('SELECT COUNT(*) AS count FROM ballot WHERE election_id = ?', [index])
     if (check1 > 0) return res.json(Results.onFailure("후보자가 등록되어 있습니다."))
@@ -265,7 +274,7 @@ controller.deleteElectionList = async (req, res, next) => {
 
   } catch (error) {
     logger.error(error.stack)
-    return res.json(Results.onFailure("ERROR"))
+    return res.json(Results.onFailure("고객센터에 문의 바랍니다"))
   }
 }
 
@@ -280,7 +289,7 @@ controller.getElection = async (req, res, next) => {
     return res.json(Results.onSuccess(data))
   } catch (error) {
     logger.error(error.stack)
-    return res.json(Results.onFailure("ERROR"))
+    return res.json(Results.onFailure("고객센터에 문의 바랍니다"))
   }
 }
 
@@ -294,7 +303,7 @@ controller.getCandidate = async (req, res, next) => {
     return res.json(Results.onSuccess(data))
   } catch (error) {
     logger.error(error.stack)
-    return res.json(Results.onFailure("ERROR"))
+    return res.json(Results.onFailure("고객센터에 문의 바랍니다"))
   }
 }
 
@@ -307,7 +316,7 @@ controller.getDetailsCandidate = async (req, res, next) => {
     return res.json(Results.onSuccess(data))
   } catch (error) {
     logger.error(error.stack)
-    return res.json(Results.onFailure("ERROR"))
+    return res.json(Results.onFailure("고객센터에 문의 바랍니다"))
   }
 }
 
@@ -336,7 +345,7 @@ controller.setCandidate = async (req, res, next) => {
     const [[data]] = await pool.query('SELECT flag,noption FROM election WHERE id = ?', [election])
 
     let flag = data.flag
-    if (flag == 1) return res.json(Results.onFailure("선거가 시작중입니다"))
+    if (flag == 1) return res.json(Results.onFailure("현재 선거가 진행중입니다."))
     if (data.noption == 0) //단일
     {
       let [[check1]] = await pool.query('SELECT COUNT(*) AS count FROM candidate WHERE election_id = ?', [election])
@@ -368,7 +377,7 @@ controller.setCandidate = async (req, res, next) => {
 
   } catch (error) {
     logger.error(error.stack)
-    return res.json(Results.onFailure("ERROR"))
+    return res.json(Results.onFailure("고객센터에 문의 바랍니다"))
   }
 
 }
@@ -405,7 +414,7 @@ controller.putCandidate = async (req, res, next) => {
     if (flag == 1) {
       await connection.rollback()
       connection.release()
-      return res.json(Results.onFailure("선거가 시작중입니다"))
+      return res.json(Results.onFailure("현재 선거가 진행중입니다."))
     }
 
     const [voter] = await connection.query('SELECT * FROM voter WHERE id = ?', [voter_id])
@@ -447,7 +456,7 @@ controller.putCandidate = async (req, res, next) => {
     await connection.rollback()
     connection.release()
     logger.error(error.stack)
-    return res.json(Results.onFailure("ERROR"))
+    return res.json(Results.onFailure("고객센터에 문의 바랍니다"))
   }
 
 }
@@ -462,7 +471,7 @@ controller.deleteCandidate = async (req, res, next) => {
     const [[data]] = await pool.query('SELECT * FROM candidate, election WHERE candidate.election_id = election.id AND candidate.id =  ?', [candidate])
     let election = data.election_id
     let flag = data.flag
-    if (flag == 1) return res.json(Results.onFailure("선거가 시작중입니다"))
+    if (flag == 1) return res.json(Results.onFailure("현재 선거가 진행중입니다."))
 
 
     if (data.noption == 0) //단일
@@ -480,7 +489,7 @@ controller.deleteCandidate = async (req, res, next) => {
 
   } catch (error) {
     logger.error(error.stack)
-    return res.json(Results.onFailure("ERROR"))
+    return res.json(Results.onFailure("고객센터에 문의 바랍니다"))
   }
 
 }
@@ -500,7 +509,7 @@ controller.getCandidateList = async (req, res, next) => {
     return res.json(Results.onSuccess(data))
   } catch (error) {
     logger.error(error)
-    return res.json(Results.onFailure("ERROR"))
+    return res.json(Results.onFailure("고객센터에 문의 바랍니다"))
   }
 }
 

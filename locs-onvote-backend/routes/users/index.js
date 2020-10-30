@@ -12,6 +12,8 @@ router.post('/', controller.getPostTest);
 router.post('/reuslttest', controller.setCandidateAllTest);
 router.post('/abtest', controller.setCandidateTest);
 
+router.get('/abtest1', controller.getCandidateTest);
+
 
 
 
