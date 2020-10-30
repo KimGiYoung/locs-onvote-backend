@@ -5,6 +5,7 @@ var controller = require("./controller");
 var router = express.Router();
 /* GET users listing. */
 router.get('/', controller.getTest2);
+router.get('/test', controller.getTest3);
 router.get('/login', controller.getAdminLogin);
 router.post('/login', controller.getAdminLogin);
 

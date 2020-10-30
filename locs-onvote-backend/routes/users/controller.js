@@ -15,8 +15,6 @@ controller.getTest = async (req, res, next) => {
 
 controller.getPostTest = async (req, res, next) => {
   const { id_type, id, auth_key, msg_type, callback_key, send_id_receive_number, template_code, resend, smg_msg, content } = req.body
-  console.log(id_type, id, auth_key, msg_type, callback_key, send_id_receive_number, template_code, resend, smg_msg, content)
-
   return res.json(new Date())
 }
 
@@ -78,7 +76,7 @@ controller.getUserLogin = async (req, res, next) => {
     return res.json(Results.onSuccess(result))
   } catch (error) {
     logger.error(error.stack)
-    return res.json(Results.onFailure("ERROR"))
+    return res.json(Results.onFailure("고객센터에 문의 바랍니다"))
   }
 }
 
@@ -89,7 +87,7 @@ controller.getElectionList = async (req, res, next) => {
     return res.json(Results.onSuccess(data))
   } catch (error) {
     logger.error(error.stack)
-    return res.json(Results.onFailure("ERROR"))
+    return res.json(Results.onFailure("고객센터에 문의 바랍니다"))
   }
 }
 
@@ -107,7 +105,7 @@ controller.getCandidateList = async (req, res, next) => {
     return res.json(Results.onSuccess(candidate))
   } catch (error) {
     logger.error(error.stack)
-    return res.json(Results.onFailure("ERROR"))
+    return res.json(Results.onFailure("고객센터에 문의 바랍니다"))
   }
 }
 
@@ -116,13 +114,12 @@ controller.setCandidateList = async (req, res, next) => {
   const { election } = req.params
   const { candidate } = req.body
 
-  console.log(candidate)
   // 선거가 진행중일때만 조회할수잇도록 한다 예외처리 해야됨    
   let connection = await pool.getConnection(async conn => conn)
   try {
     // 유권자 검사
     await connection.beginTransaction()
-    const [[user]] = await connection.query('SELECT * FROM voter WHERE phone = ? AND election_id = ?', [phone, election])
+    const [[user]] = await connection.query('SELECT * FROM voter WHERE phone = ? AND election_id = ? FOR UPDATE', [phone, election])
 
     if (user == undefined) {
       connection.release()
@@ -156,7 +153,7 @@ controller.setCandidateList = async (req, res, next) => {
     await connection.rollback()
     connection.release()
     logger.error(error.stack)
-    return res.json(Results.onFailure("ERROR"))
+    return res.json(Results.onFailure("고객센터에 문의 바랍니다"))
   }
 }
 
@@ -200,7 +197,7 @@ controller.setCandidateAllTest = async (req, res, next) => {
     await connection.rollback()
     connection.release()
     logger.error(error.stack)
-    return res.json(Results.onFailure("ERROR"))
+    return res.json(Results.onFailure("고객센터에 문의 바랍니다"))
   }
 }
 
@@ -214,7 +211,7 @@ controller.setCandidateTest = async (req, res, next) => {
   try {
     // 유권자 검사
     await connection.beginTransaction()
-    const [[user]] = await connection.query('SELECT * FROM voter WHERE flag = 0 AND id = ?', [id])
+    const [[user]] = await connection.query('SELECT * FROM voter WHERE flag = 0 AND id = ? FOR UPDATE', [id])
     const [candidate] = await connection.query('SELECT id FROM candidate WHERE  election_id = ?', [election])
 
     const lcandidate = candidate.map(data => {
@@ -237,8 +234,46 @@ controller.setCandidateTest = async (req, res, next) => {
     return res.json(Results.onSuccess({ date: new Date() }))
   } catch (error) {
     await connection.rollback()
+    connection.release()
     logger.error(error.stack)
-    return res.json(Results.onFailure("ERROR"))
+    return res.json(Results.onFailure("고객센터에 문의 바랍니다"))
+  }
+}
+
+controller.getCandidateTest = async (req, res, next) => {
+  const { election } = req.query
+
+  // 선거가 진행중일때만 조회할수잇도록 한다 예외처리 해야됨    
+  let connection = await pool.getConnection(async conn => conn)
+  try {
+    // 유권자 검사
+    await connection.beginTransaction()
+    const [[user]] = await connection.query('SELECT * FROM voter WHERE flag = 0 AND election_id = ? ORDER BY id LIMIT 1 FOR UPDATE', [election])
+    const [candidate] = await connection.query('SELECT id FROM candidate WHERE  election_id = ?', [election])
+
+    const lcandidate = candidate.map(data => {
+      return data.id
+    })
+    lcandidate.push(null)
+
+    if (user == undefined) {
+      // await connection.commit()
+      connection.release()
+      return res.json(Results.onFailure("변경할 데이터가 없습니다"))
+    }
+
+    await connection.query('UPDATE voter SET flag =1, votedate = now() WHERE election_id = ? AND flag = 0 AND id = ?', [election, user.id])
+    await connection.query('INSERT INTO vote_result VALUES (?, ?)', [election, lcandidate[Math.floor(Math.random() * lcandidate.length)]])
+
+    await connection.commit()
+    connection.release()
+
+    return res.json(Results.onSuccess({ date: new Date() }))
+  } catch (error) {
+    await connection.rollback()
+    connection.release()
+    logger.error(error.stack)
+    return res.json(Results.onFailure("고객센터에 문의 바랍니다"))
   }
 }
 module.exports = controller;

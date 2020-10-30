@@ -72,7 +72,7 @@ controller.getBallotLogin = async (req, res, next) => {
     return res.json(Results.onSuccess(result))
   } catch (error) {
     logger.error(error.stack)
-    return res.json(Results.onFailure("ERROR"))
+    return res.json(Results.onFailure("고객센터에 문의 바랍니다"))
   }
 }
 
@@ -86,7 +86,7 @@ controller.getBallotlist = async (req, res, next) => {
     return res.json(Results.onSuccess(ballot))
   } catch (error) {
     logger.error(error.stack)
-    return res.json(Results.onFailure("ERROR"))
+    return res.json(Results.onFailure("고객센터에 문의 바랍니다"))
   }
 }
 
@@ -117,7 +117,7 @@ controller.setBallotlist = async (req, res, next) => {
 
   } catch (error) {
     logger.error(error.stack)
-    return res.json(Results.onFailure("ERROR"))
+    return res.json(Results.onFailure("고객센터에 문의 바랍니다"))
   }
 }
 
