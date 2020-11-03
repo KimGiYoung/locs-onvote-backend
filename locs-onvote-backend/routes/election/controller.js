@@ -87,7 +87,7 @@ let isBirhdayType = (data) => {
 
 controller.setElectionList = async (req, res, next) => {
   const { id } = req.decoded
-  const { name, start_dt, end_dt, start_preview, end_preview, option, extension } = req.body
+  const { name, start_dt, end_dt, start_preview, end_preview, option, extension, rate } = req.body
   const tStart_dt = new Date(start_dt).toLocaleString('ko-KR', { hour12: false })
   const tEnd_dt = new Date(end_dt).toLocaleString('ko-KR', { hour12: false })
   const tStart_preview = new Date(start_preview).toLocaleString('ko-KR', { hour12: false })
@@ -98,7 +98,7 @@ controller.setElectionList = async (req, res, next) => {
   try {
 
     await connection.beginTransaction(); // START TRANSACTION
-    const [data] = await connection.query('INSERT INTO election(admin_id, name, start_dt, end_dt, start_preview, end_preview, flag, noption, extension, voteflag) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [id, name, tStart_dt, tEnd_dt, tStart_preview, tEnd_preview, 0, option, extension, 0])
+    const [data] = await connection.query('INSERT INTO election(admin_id, name, start_dt, end_dt, start_preview, end_preview, flag, noption, extension, voteflag) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [id, name, tStart_dt, tEnd_dt, tStart_preview, tEnd_preview, 0, option, extension, 0, rate])
     const election = data.insertId
     const excelFile = xlsx.read(file.buffer)
     // @breif 엑셀 파일의 첫번째 시트의 정보를 추출
@@ -157,7 +157,7 @@ controller.setElectionList = async (req, res, next) => {
 
 controller.putElectionList = async (req, res, next) => {
   const { id } = req.decoded
-  const { index, name, start_dt, end_dt, start_preview, end_preview, option, extension } = req.body
+  const { index, name, start_dt, end_dt, start_preview, end_preview, option, extension, rate } = req.body
   const tStart_dt = new Date(start_dt).toLocaleString('ko-KR', { hour12: false })
   const tEnd_dt = new Date(end_dt).toLocaleString('ko-KR', { hour12: false })
   const tStart_preview = new Date(start_preview).toLocaleString('ko-KR', { hour12: false })
@@ -187,7 +187,7 @@ controller.putElectionList = async (req, res, next) => {
     }
 
     await connection.beginTransaction(); // START TRANSACTION
-    await connection.query('UPDATE election SET name=?, start_dt=?, end_dt=?, start_preview=?, end_preview=?, noption=?, extension=?  WHERE admin_id=? AND id=?', [name, tStart_dt, tEnd_dt, tStart_preview, tEnd_preview, option, extension, id, index])
+    await connection.query('UPDATE election SET name=?, start_dt=?, end_dt=?, start_preview=?, end_preview=?, noption=?, extension=?, rate=?  WHERE admin_id=? AND id=?', [name, tStart_dt, tEnd_dt, tStart_preview, tEnd_preview, option, extension, rate, id, index])
     const election = index
 
     if (file != undefined && file.length != 0) {

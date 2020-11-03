@@ -57,6 +57,17 @@ controller.getUserLogin = async (req, res, next) => {
     const [[user]] = await pool.query('SELECT * FROM voter WHERE code = ? AND phone LIKE (?) limit 1', [code, strquery])
 
     if (user == undefined) return res.json(Results.onFailure("인증이 실패하였습니다"))
+
+    const [check] = await pool.query('SELECT * FROM voter WHERE code = ? AND phone LIKE (?)', [code, strquery])
+    if (check.length == 0) return res.json(Results.onFailure("투표할 목록이 없습니다"))
+    const election_list = check.map(data => {
+      return data.election_id
+    })
+
+    const [check1] = await pool.query('SELECT end_dt from election where id in (?)  AND end_dt >= NOW()', [election_list])
+
+    if (check1.length == 0) return res.json(Results.onFailure("투표할 목록이 없습니다"))
+
     const payload = {
       id: user.id,
       username: user.username,
@@ -247,8 +258,8 @@ controller.getCandidateTest = async (req, res, next) => {
   let connection = await pool.getConnection(async conn => conn)
   try {
     // 유권자 검사
-    await connection.beginTransaction()
-    const [[user]] = await connection.query('SELECT * FROM voter WHERE flag = 0 AND election_id = ? and code = ?', [election, code])
+
+    const [[user]] = await connection.query('SELECT id FROM voter WHERE flag = 0 AND election_id = ? and code = ? FOR UPDATE', [election, code])
     const [candidate] = await connection.query('SELECT id FROM candidate WHERE  election_id = ?', [election])
 
     const lcandidate = candidate.map(data => {
@@ -257,11 +268,11 @@ controller.getCandidateTest = async (req, res, next) => {
     lcandidate.push(null)
 
     if (user == undefined) {
-      // await connection.commit()
-      connection.release()
+      await connection.rollback()
+      await connection.release()
       return res.json(Results.onFailure("변경할 데이터가 없습니다"))
     }
-
+    await connection.beginTransaction()
     await connection.query('UPDATE voter SET flag =1, votedate = now() WHERE election_id = ? AND flag = 0 AND id = ?', [election, user.id])
     await connection.query('INSERT INTO vote_result VALUES (?, ?)', [election, lcandidate[Math.floor(Math.random() * lcandidate.length)]])
 

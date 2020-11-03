@@ -51,9 +51,20 @@ controller.getBallotLogin = async (req, res, next) => {
 
   try {
 
-    const [[user]] = await pool.query('SELECT voter.username, voter.birthday, voter.phone FROM ballot, voter WHERE ballot.code = ? AND ballot.voter_id = voter.id AND voter.phone LIKE (?)', [code, strquery])
+    const [[user]] = await pool.query('SELECT voter.username, voter.birthday, voter.phone FROM ballot, voter WHERE ballot.code = ? AND ballot.voter_id = voter.id AND voter.phone LIKE (?) LIMIT 1', [code, strquery])
 
     if (user == undefined) return res.json(Results.onFailure("인증이 실패하였습니다"))
+
+    const [check] = await pool.query('SELECT voter.election_id FROM ballot, voter WHERE ballot.code = ? AND ballot.voter_id = voter.id AND voter.phone LIKE (?) LIMIT 1', [code, strquery])
+    if (check.length == 0) return res.json(Results.onFailure("개표 확인할 목록이 없습니다."))
+    const election_list = check.map(data => {
+      return data.election_id
+    })
+
+    const [check1] = await pool.query('SELECT end_dt from election where id in (?) and voteflag=0', [election_list])
+    if (check1.length == 0) return res.json(Results.onFailure("개표 확인할 목록이 없습니다."))
+
+
     const payload = {
       username: user.username,
       birthday: user.birthday,

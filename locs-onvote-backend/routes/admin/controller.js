@@ -23,8 +23,8 @@ controller.getTest = async (req, res, next) => {
       let send_id_receive_number = `${data.id}|${data.phone}`
       let template_code = "TML_001"
       let resend = "SMS"
-      let content = `[카톡][VOTEON] ${data.username}님  ${data.count}건의 선거가 시작되었습니다. http://211.236.48.215:3000/voter/${data.code} 로 접속하여 투표하세요.`
-      let smg_msg = `[문자][VOTEON] ${data.username}님  ${data.count}건의 선거가 시작되었습니다. http://211.236.48.215:3000/voter/${data.code} 로 접속하여 투표하세요.`
+      let content = `[카톡][VOTEON] ${data.username}님  ${data.count}건의 선거가 시작되었습니다. https://voteon.kr/voter/${data.code} 로 접속하여 투표하세요.`
+      let smg_msg = `[문자][VOTEON] ${data.username}님  ${data.count}건의 선거가 시작되었습니다. https://voteon.kr/voter/${data.code} 로 접속하여 투표하세요.`
       return axios.post('http://127.0.0.1:3000/api/users', { id_type, id, auth_key, msg_type, callback_key, send_id_receive_number, template_code, resend, smg_msg, content })
     })
 
