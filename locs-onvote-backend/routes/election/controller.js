@@ -403,7 +403,7 @@ controller.putCandidate = async (req, res, next) => {
       else {
         img_path = data.img_path
       }
-
+      console.log("??")
       if (files.pdf != undefined) {
         pdf_path = files.pdf[0].path
       }
