@@ -140,11 +140,10 @@ controller.getVoteList = async (req, res, next) => {
   const { election } = req.params
   const { pageNum, limit, search, flag, start, end } = req.query
   let npageNum = Number(pageNum) || 1  // NOTE: 쿼리스트링으로 받을 페이지 번호 값, 기본값은 1
-  const contentSize = 10 // NOTE: 페이지에서 보여줄 컨텐츠 수.
   let nlimit = Number(limit) || 10
   let query = ""
 
-  const skipSize = (npageNum - 1) * contentSize // NOTE: 다음 페이지 갈 때 건너뛸 
+  const skipSize = (npageNum - 1) * limit // NOTE: 다음 페이지 갈 때 건너뛸 
 
   try {
     if (search !== undefined && search !== "null") {
@@ -342,25 +341,31 @@ controller.getVoteResult = async (req, res, next) => {
   const { id } = req.decoded
   const { pageNum, limit, start, end } = req.query
   let npageNum = Number(pageNum) || 1  // NOTE: 쿼리스트링으로 받을 페이지 번호 값, 기본값은 1
-  const contentSize = 10 // NOTE: 페이지에서 보여줄 컨텐츠 수.
   let nlimit = Number(limit) || 10
-  let query = ""
-  const skipSize = (npageNum - 1) * contentSize // NOTE: 다음 페이지 갈 때 건너뛸 
+  const skipSize = (npageNum - 1) * nlimit // NOTE: 다음 페이지 갈 때 건너뛸 
+  let date = ""
+  console.log(skipSize, limit)
   try {
-    let query = `SELECT election.id, election.name, election.start_dt, election.end_dt, election.noption, election.rate, COUNT(*) AS total, COUNT(IF(voter.flag=1, 1, NULL)) AS count
-    FROM election, voter
-     WHERE election.voteflag=1 AND election.flag = 2 AND  election.id = voter.election_id AND election.admin_id = ${id} 
-    GROUP BY election.id, election.name, election.start_dt, election.end_dt, election.noption  ORDER BY election.id LIMIT ${skipSize}, ${nlimit} `
 
     if (start != 'null' && end != 'null') {
-      query = `SELECT election.id, election.name, election.start_dt, election.end_dt, election.noption, election.rate, COUNT(*) AS total, COUNT(IF(voter.flag=1, 1, NULL)) AS count
-      FROM election, voter
-       WHERE election.voteflag=1 AND election.flag = 2 AND  election.id = voter.election_id AND election.admin_id = ${id} AND DATE(election.end_dt) BETWEEN '${start}' AND '${end}'
-      GROUP BY election.id, election.name, election.start_dt, election.end_dt, election.noption  ORDER BY election.id  LIMIT ${skipSize}, ${nlimit}  `
+      date = `AND DATE(election.end_dt) BETWEEN '${start}' AND '${end}'`
     }
 
+
+    let query = `SELECT election.id, election.name, election.start_dt, election.end_dt, election.noption, election.rate, COUNT(*) AS total, COUNT(IF(voter.flag=1, 1, NULL)) AS count
+    FROM election, voter
+     WHERE election.voteflag=1 AND election.flag = 2 AND  election.id = voter.election_id AND election.admin_id = ${id} ${date}
+    GROUP BY election.id, election.name, election.start_dt, election.end_dt, election.noption  ORDER BY election.id LIMIT ${skipSize}, ${nlimit} `
+
+
+    const [[count]] = await pool.query(`SELECT count(*) AS count
+    FROM election
+     WHERE election.voteflag=1 AND election.flag = 2  AND election.admin_id = ? ${date} `, [id])
+    const totalCount = Number(count.count)
+
     const [eleciton] = await pool.query(query, [])
-    if (eleciton.length == 0) return res.json(Results.onSuccess(eleciton))
+    // eleciton 조회 결과가 없을 경우 retrun 형식 동일하게 빈배열로 전달
+    if (eleciton.length == 0) return res.json(Results.onSuccess({ pageNum: npageNum, totalCount: 0, contents: [] }))
     const result = eleciton.map(async data => {
       let json = {}
       json = data
@@ -386,7 +391,7 @@ controller.getVoteResult = async (req, res, next) => {
         return json
       }
       let voteCount = vote.map(async data => {
-        const [[ncount]] = await pool.query(`SELECT COUNT(*) AS count FROM vote_result WHERE candidate_id = ?`, [data.id])
+        const [[ncount]] = await pool.query(`SELECT COUNT(*) AS count FROM vote_result WHERE candidate_id = ? `, [data.id])
         return { id: data.id, username: data.username, team: data.team, count: ncount.count, symbol: data.symbol }
       })
 
@@ -442,7 +447,6 @@ controller.getVoteResult = async (req, res, next) => {
           json.result = "동점"
         }
       }
-      console.log(num, rate)
       if (num <= rate) {
         json.result = "무효"
       }
@@ -455,7 +459,12 @@ controller.getVoteResult = async (req, res, next) => {
     })
 
     let resjson = await Promise.all(result)
-    return res.json(Results.onSuccess(resjson))
+    const result1 = {
+      pageNum: npageNum,
+      totalCount,
+      contents: resjson,
+    }
+    return res.json(Results.onSuccess(result1))
   } catch (error) {
     logger.error(error.stack)
     return res.json(Results.onFailure("고객센터에 문의 바랍니다"))
@@ -467,21 +476,17 @@ controller.getVoteResultExcel = async (req, res, next) => {
   const { id } = req.decoded
   const { start, end } = req.query
   try {
-    let query = `SELECT election.id, election.name, election.start_dt, election.end_dt, election.noption, election.rate, COUNT(*) AS total, COUNT(IF(voter.flag=1, 1, NULL)) AS count
-    FROM election, voter
-     WHERE election.voteflag=1 AND election.flag = 2 AND  election.id = voter.election_id AND election.admin_id = ${id} 
-    GROUP BY election.id, election.name, election.start_dt, election.end_dt, election.noption  ORDER BY election.id  `
-
+    let date = ""
     if (start != 'null' && end != 'null') {
-      query = `SELECT election.id, election.name, election.start_dt, election.end_dt, election.noption,  election.rate, COUNT(*) AS total, COUNT(IF(voter.flag=1, 1, NULL)) AS count
-      FROM election, voter
-       WHERE election.voteflag=1 AND election.flag = 2 AND  election.id = voter.election_id AND election.admin_id = ${id} AND DATE(election.end_dt) BETWEEN '${start}' AND '${end}'
-      GROUP BY election.id, election.name, election.start_dt, election.end_dt, election.noption  ORDER BY election.id `
+      date = `AND DATE(election.end_dt) BETWEEN '${start}' AND '${end}`
     }
 
+    let query = `SELECT election.id, election.name, election.start_dt, election.end_dt, election.noption, election.rate, COUNT(*) AS total, COUNT(IF(voter.flag=1, 1, NULL)) AS count
+    FROM election, voter
+     WHERE election.voteflag=1 AND election.flag = 2 AND  election.id = voter.election_id AND election.admin_id = ${id} ${date}
+    GROUP BY election.id, election.name, election.start_dt, election.end_dt, election.noption  ORDER BY election.id`
+
     const [eleciton] = await pool.query(query, [])
-
-
 
     let candidate_list = {}
     const result = eleciton.map(async data => {

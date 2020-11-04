@@ -98,7 +98,7 @@ controller.setElectionList = async (req, res, next) => {
   try {
 
     await connection.beginTransaction(); // START TRANSACTION
-    const [data] = await connection.query('INSERT INTO election(admin_id, name, start_dt, end_dt, start_preview, end_preview, flag, noption, extension, voteflag) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [id, name, tStart_dt, tEnd_dt, tStart_preview, tEnd_preview, 0, option, extension, 0, rate])
+    const [data] = await connection.query('INSERT INTO election(admin_id, name, start_dt, end_dt, start_preview, end_preview, flag, noption, extension, voteflag, rate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [id, name, tStart_dt, tEnd_dt, tStart_preview, tEnd_preview, 0, option, extension, 0, rate])
     const election = data.insertId
     const excelFile = xlsx.read(file.buffer)
     // @breif 엑셀 파일의 첫번째 시트의 정보를 추출
@@ -108,7 +108,6 @@ controller.setElectionList = async (req, res, next) => {
     // @details 엑셀 파일의 첫번째 시트를 읽어온다.
 
     const jsonData = xlsx.utils.sheet_to_json(firstSheet, { defval: "" });
-    console.log(jsonData)
     let values = [];
     if (jsonData.length === 0) {
       connection.release()
@@ -162,8 +161,8 @@ controller.putElectionList = async (req, res, next) => {
   const tEnd_dt = new Date(end_dt).toLocaleString('ko-KR', { hour12: false })
   const tStart_preview = new Date(start_preview).toLocaleString('ko-KR', { hour12: false })
   const tEnd_preview = new Date(end_preview).toLocaleString('ko-KR', { hour12: false })
-
   const file = req.files
+
   let connection = await pool.getConnection(async conn => conn)
   try {
 

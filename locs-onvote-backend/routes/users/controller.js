@@ -8,13 +8,12 @@ const { networkInterfaces } = require("os");
 let controller = {}
 
 controller.getTest = async (req, res, next) => {
-  // console.log(new Date())
-
   return res.json(new Date())
 }
 
 controller.getPostTest = async (req, res, next) => {
   const { id_type, id, auth_key, msg_type, callback_key, send_id_receive_number, template_code, resend, smg_msg, content } = req.body
+  console.log(content)
   return res.json(new Date())
 }
 

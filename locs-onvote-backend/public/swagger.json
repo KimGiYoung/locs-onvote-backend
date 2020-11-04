@@ -2272,6 +2272,22 @@
                         "required": false,
                         "type": "string",
                         "format": "date"
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "최대 조회수",
+                        "required": false,
+                        "type": "string",
+                        "format": "date"
+                    },
+                    {
+                        "name": "pageNum",
+                        "in": "query",
+                        "description": "페이지 넘버",
+                        "required": false,
+                        "type": "string",
+                        "format": "date"
                     }
                 ],
                 "requestBody": {},
