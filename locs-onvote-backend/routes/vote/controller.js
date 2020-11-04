@@ -140,11 +140,10 @@ controller.getVoteList = async (req, res, next) => {
   const { election } = req.params
   const { pageNum, limit, search, flag, start, end } = req.query
   let npageNum = Number(pageNum) || 1  // NOTE: 쿼리스트링으로 받을 페이지 번호 값, 기본값은 1
-  const contentSize = 10 // NOTE: 페이지에서 보여줄 컨텐츠 수.
   let nlimit = Number(limit) || 10
   let query = ""
 
-  const skipSize = (npageNum - 1) * contentSize // NOTE: 다음 페이지 갈 때 건너뛸 
+  const skipSize = (npageNum - 1) * limit // NOTE: 다음 페이지 갈 때 건너뛸 
 
   try {
     if (search !== undefined && search !== "null") {
@@ -271,8 +270,16 @@ controller.getElectionCounting = async (req, res, next) => {
 
   try {
     const [data] = await pool.query('SELECT election.id, election.name,  COUNT(ballot.election_id) AS total , COUNT(IF(ballot.flag=1, 1, NULL)) AS count  FROM election LEFT JOIN ballot ON election.id = ballot.`election_id` WHERE election.flag = 2 AND election.admin_id = ? AND election.voteflag = 0 GROUP BY election.id ORDER BY election.id ', [id])
-
-    return res.json(Results.onSuccess(data))
+    const Election = await data.map(async data => {
+      const [[result]] = await pool.query(`
+      SELECT  COUNT(*) AS usertotal, COUNT(IF(voter.flag=1, 1, NULL)) AS usercount
+    FROM election, voter
+     WHERE election.voteflag=1 AND election.flag = 2 AND  election.id = voter.election_id  AND election.id = ?
+      `, [data.id])
+      return { id: data.id, name: data.name, total: data.total, count: data.count, usertotal: result.usertotal, usercount: result.usercount }
+    })
+    let bElection_check = await Promise.all(Election)
+    return res.json(Results.onSuccess(bElection_check))
   } catch (error) {
     logger.error(error.stack)
     return res.json(Results.onFailure("고객센터에 문의 바랍니다"))
@@ -332,32 +339,46 @@ controller.setElectionGroupCounting = async (req, res, next) => {
 
 controller.getVoteResult = async (req, res, next) => {
   const { id } = req.decoded
-  const { start, end } = req.query
+  const { pageNum, limit, start, end } = req.query
+  let npageNum = Number(pageNum) || 1  // NOTE: 쿼리스트링으로 받을 페이지 번호 값, 기본값은 1
+  let nlimit = Number(limit) || 10
+  const skipSize = (npageNum - 1) * nlimit // NOTE: 다음 페이지 갈 때 건너뛸 
+  let date = ""
+  console.log(skipSize, limit)
   try {
-    let query = `SELECT election.id, election.name, election.start_dt, election.end_dt, election.noption, COUNT(*) AS total, COUNT(IF(voter.flag=1, 1, NULL)) AS count
-    FROM election, voter
-     WHERE election.voteflag=1 AND election.flag = 2 AND  election.id = voter.election_id AND election.admin_id = ${id} 
-    GROUP BY election.id, election.name, election.start_dt, election.end_dt, election.noption  ORDER BY election.id `
 
     if (start != 'null' && end != 'null') {
-      query = `SELECT election.id, election.name, election.start_dt, election.end_dt, election.noption, COUNT(*) AS total, COUNT(IF(voter.flag=1, 1, NULL)) AS count
-      FROM election, voter
-       WHERE election.voteflag=1 AND election.flag = 2 AND  election.id = voter.election_id AND election.admin_id = ${id} AND DATE(election.end_dt) BETWEEN '${start}' AND '${end}'
-      GROUP BY election.id, election.name, election.start_dt, election.end_dt, election.noption  ORDER BY election.id   `
+      date = `AND DATE(election.end_dt) BETWEEN '${start}' AND '${end}'`
     }
 
+
+    let query = `SELECT election.id, election.name, election.start_dt, election.end_dt, election.noption, election.rate, COUNT(*) AS total, COUNT(IF(voter.flag=1, 1, NULL)) AS count
+    FROM election, voter
+     WHERE election.voteflag=1 AND election.flag = 2 AND  election.id = voter.election_id AND election.admin_id = ${id} ${date}
+    GROUP BY election.id, election.name, election.start_dt, election.end_dt, election.noption  ORDER BY election.id LIMIT ${skipSize}, ${nlimit} `
+
+
+    const [[count]] = await pool.query(`SELECT count(*) AS count
+    FROM election
+     WHERE election.voteflag=1 AND election.flag = 2  AND election.admin_id = ? ${date} `, [id])
+    const totalCount = Number(count.count)
+
     const [eleciton] = await pool.query(query, [])
-    if (eleciton.length == 0) return res.json(Results.onSuccess(eleciton))
+    // eleciton 조회 결과가 없을 경우 retrun 형식 동일하게 빈배열로 전달
+    if (eleciton.length == 0) return res.json(Results.onSuccess({ pageNum: npageNum, totalCount: 0, contents: [] }))
     const result = eleciton.map(async data => {
       let json = {}
       json = data
       let num = Math.floor((data.count / data.total) * 100)
       if (num === Infinity) num = 0
+      let rate = data.rate
       json.rate = num
 
 
+
+
       let [[nullcount]] = await pool.query(`
-      SELECT  COUNT(IF(IFNULL(candidate_id,0)=0, 1, NULL)) AS count FROM vote_result WHERE  election_id = ?
+      SELECT COUNT(IF(IFNULL(candidate_id,0)=0, 1, NULL)) AS count FROM vote_result WHERE  election_id = ?
       `, [data.id])
 
       const [vote] = await pool.query(`
@@ -365,59 +386,85 @@ controller.getVoteResult = async (req, res, next) => {
       `, [data.id])
 
       if (vote.length == 0) {
-        json.data = [{ username: "기권", team: "기권", count: nullcount.count }]
+        json.data = [{ id: -1, username: "기권", team: "기권", count: nullcount.count }]
         json.result = "무효"
         return json
       }
       let voteCount = vote.map(async data => {
-        const [[ncount]] = await pool.query(`SELECT COUNT(*) AS count FROM vote_result WHERE candidate_id = ?`, [data.id])
-        return { username: data.username, team: data.team, count: ncount.count }
+        const [[ncount]] = await pool.query(`SELECT COUNT(*) AS count FROM vote_result WHERE candidate_id = ? `, [data.id])
+        return { id: data.id, username: data.username, team: data.team, count: ncount.count, symbol: data.symbol }
       })
 
 
 
       let count = await Promise.all(voteCount)
 
-      count.push({ username: "기권", team: "기권", count: nullcount.count })
+      count.push({ id: vote[vote.length - 1].id + 1, username: "기권", team: "기권", count: nullcount.count })
 
       const candidate = count.sort((a, b) => {
         return b["count"] - a["count"]
       })
-
       json.data = candidate
 
       if (data.noption == 0) {
-        if (candidate[0].symbol === "찬성") {
-          json.result = "가결"
-        }
-        else if (candidate[0].symbol === "반대") {
-          json.result = "부결"
+        if (candidate[0].username == "기권") {
+          if (candidate[1].symbol == "찬성") {
+            json.result = "가결"
+          }
+          else if (candidate[1].symbol == "반대") {
+            json.result = "부결"
+          }
+          if (candidate[1].count === candidate[2].count) {
+            json.result = "동점"
+          }
+
         }
         else {
-          json.result = "무효"
-        }
+          if (candidate[0].symbol === "찬성") {
+            json.result = "가결"
+          }
+          else if (candidate[0].symbol === "반대") {
+            json.result = "부결"
+          }
+          else {
+            json.result = "무효"
+          }
 
-        if (candidate[0].count === candidate[1].count) {
-          json.result = "동점"
+          if (candidate[0].count === candidate[1].count) {
+            json.result = "동점"
+          }
         }
 
       }
       else {
         if (candidate[0].username == "기권") {
-          json.result = `${candidate[1].team}(${candidate[1].username})`
+          json.result = `${candidate[1].team} (${candidate[1].username})`
         }
         else {
-          json.result = `${candidate[0].team}(${candidate[0].username})`
+          json.result = `${candidate[0].team} (${candidate[0].username})`
         }
         if (candidate[0].count === candidate[1].count) {
           json.result = "동점"
         }
       }
+      if (num <= rate) {
+        json.result = "무효"
+      }
+
+      json.data.sort((a, b) => {
+        return a["id"] - b["id"]
+      })
+
       return json
     })
 
     let resjson = await Promise.all(result)
-    return res.json(Results.onSuccess(resjson))
+    const result1 = {
+      pageNum: npageNum,
+      totalCount,
+      contents: resjson,
+    }
+    return res.json(Results.onSuccess(result1))
   } catch (error) {
     logger.error(error.stack)
     return res.json(Results.onFailure("고객센터에 문의 바랍니다"))
@@ -429,21 +476,17 @@ controller.getVoteResultExcel = async (req, res, next) => {
   const { id } = req.decoded
   const { start, end } = req.query
   try {
-    let query = `SELECT election.id, election.name, election.start_dt, election.end_dt, election.noption, COUNT(*) AS total, COUNT(IF(voter.flag=1, 1, NULL)) AS count
-    FROM election, voter
-     WHERE election.voteflag=1 AND election.flag = 2 AND  election.id = voter.election_id AND election.admin_id = ${id} 
-    GROUP BY election.id, election.name, election.start_dt, election.end_dt, election.noption  ORDER BY election.id  `
-
+    let date = ""
     if (start != 'null' && end != 'null') {
-      query = `SELECT election.id, election.name, election.start_dt, election.end_dt, election.noption, COUNT(*) AS total, COUNT(IF(voter.flag=1, 1, NULL)) AS count
-      FROM election, voter
-       WHERE election.voteflag=1 AND election.flag = 2 AND  election.id = voter.election_id AND election.admin_id = ${id} AND DATE(election.end_dt) BETWEEN '${start}' AND '${end}'
-      GROUP BY election.id, election.name, election.start_dt, election.end_dt, election.noption  ORDER BY election.id `
+      date = `AND DATE(election.end_dt) BETWEEN '${start}' AND '${end}`
     }
 
+    let query = `SELECT election.id, election.name, election.start_dt, election.end_dt, election.noption, election.rate, COUNT(*) AS total, COUNT(IF(voter.flag=1, 1, NULL)) AS count
+    FROM election, voter
+     WHERE election.voteflag=1 AND election.flag = 2 AND  election.id = voter.election_id AND election.admin_id = ${id} ${date}
+    GROUP BY election.id, election.name, election.start_dt, election.end_dt, election.noption  ORDER BY election.id`
+
     const [eleciton] = await pool.query(query, [])
-
-
 
     let candidate_list = {}
     const result = eleciton.map(async data => {
@@ -452,6 +495,7 @@ controller.getVoteResultExcel = async (req, res, next) => {
       let num = Math.floor((data.count / data.total) * 100)
       if (num === Infinity) num = 0
       json.투표율 = num
+      let rate = data.rate
       json.유권자 = data.total
       json.투표자 = data.count
 
@@ -461,21 +505,21 @@ controller.getVoteResultExcel = async (req, res, next) => {
       `, [data.id])
 
       const [vote] = await pool.query(`
-      SELECT candidate.id, voter.username FROM voter, candidate WHERE voter.id = candidate.voter_id AND voter.election_id = ? 
+      SELECT candidate.id, candidate.symbol, candidate.team, voter.username FROM voter, candidate WHERE voter.id = candidate.voter_id AND voter.election_id = ? 
       `, [data.id])
 
       if (vote.length == 0) {
-        candidate_list[data.name] = [{ "이름": "기권", "투표수": nullcount.count }]
+        candidate_list[data.name] = [{ "기호": "", "이름": "기권", "투표수": nullcount.count }]
         return json
       }
       let voteCount = vote.map(async data => {
         const [[ncount]] = await pool.query(`SELECT COUNT(*) AS count FROM vote_result WHERE candidate_id = ?`, [data.id])
-        return { "이름": data.username, "투표수": ncount.count }
+        return { "기호": data.symbol, "팀": data.team, "이름": data.username, "투표수": ncount.count }
       })
 
       let count = await Promise.all(voteCount)
 
-      count.push({ "이름": "기권", "투표수": nullcount.count })
+      count.push({ "기호": "", "이름": "기권", "투표수": nullcount.count })
 
       const candidate = count.sort((a, b) => {
         return b["투표수"] - a["투표수"]
@@ -483,32 +527,52 @@ controller.getVoteResultExcel = async (req, res, next) => {
 
       candidate_list[data.name] = candidate
       if (data.noption == 0) {
-        if (candidate[0].symbol === "찬성") {
-          json.result = "가결"
-        }
-        else if (candidate[0].symbol === "반대") {
-          json.result = "부결"
+        if (candidate[0].이름 == "기권") {
+          if (candidate[1].기호 == "찬성") {
+            json.당선자 = "가결"
+          }
+          else if (candidate[1].기호 == "반대") {
+            json.당선자 = "부결"
+          }
+          if (candidate[1].투표수 === candidate[2].투표수) {
+            json.당선자 = "동점"
+          }
+
         }
         else {
-          json.result = "무효"
+          if (candidate[0].기호 === "찬성") {
+            json.당선자 = "가결"
+          }
+          else if (candidate[0].기호 === "반대") {
+            json.당선자 = "부결"
+          }
+          else {
+            json.당선자 = "무효"
+          }
+
+          if (candidate[0].투표수 === candidate[1].투표수) {
+            json.당선자 = "동점"
+          }
         }
 
-        if (candidate[0].count === candidate[1].count) {
-          json.result = "동점"
-        }
       }
       else {
-        if (candidate[0].username == "기권") {
-          json.result = `${candidate[1].team}(${candidate[1].username})`
+        if (candidate[0].이름 == "기권") {
+          json.당선자 = `${candidate[1].팀} (${candidate[1].이름})`
         }
         else {
-          json.result = `${candidate[0].team}(${candidate[0].username})`
+          json.당선자 = `${candidate[0].팀} (${candidate[0].이름})`
         }
-        if (candidate[0].count === candidate[1].count) {
-          json.result = "동점"
+        if (candidate[0].투표수 === candidate[1].투표수) {
+          json.당선자 = "동점"
         }
-
       }
+      if (num <= rate) {
+        json.당선자 = "무효"
+      }
+
+
+
       return json
     })
 
@@ -518,11 +582,9 @@ controller.getVoteResultExcel = async (req, res, next) => {
     let book = xlsx.utils.book_new();
     let ws = xlsx.utils.json_to_sheet(resjosn);
     xlsx.utils.book_append_sheet(book, ws, ws_name);
-    console.log(Object.keys(candidate_list))
-    for (let data1 in resjosn) {
 
+    for (let data1 in resjosn) {
       ws_name = resjosn[data1].선거명
-      console.log(candidate_list[ws_name])
       ws = xlsx.utils.json_to_sheet(candidate_list[ws_name]);
       xlsx.utils.book_append_sheet(book, ws, ws_name);
     }

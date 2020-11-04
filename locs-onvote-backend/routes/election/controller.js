@@ -64,7 +64,7 @@ controller.getElectionShortList = async (req, res, next) => {
   const { flag } = req.query
   const strflag = flag.split(',')
   try {
-    const [data] = await pool.query('SELECT id, name, flag FROM election WHERE admin_id = ? AND flag IN(?) ORDER BY id', [id, strflag])
+    const [data] = await pool.query('SELECT id, name, flag, noption FROM election WHERE admin_id = ? AND flag IN(?) ORDER BY id', [id, strflag])
     return res.json(Results.onSuccess(data))
   } catch (error) {
     logger.error(error.stack)
@@ -87,7 +87,7 @@ let isBirhdayType = (data) => {
 
 controller.setElectionList = async (req, res, next) => {
   const { id } = req.decoded
-  const { name, start_dt, end_dt, start_preview, end_preview, option, extension } = req.body
+  const { name, start_dt, end_dt, start_preview, end_preview, option, extension, rate } = req.body
   const tStart_dt = new Date(start_dt).toLocaleString('ko-KR', { hour12: false })
   const tEnd_dt = new Date(end_dt).toLocaleString('ko-KR', { hour12: false })
   const tStart_preview = new Date(start_preview).toLocaleString('ko-KR', { hour12: false })
@@ -98,7 +98,7 @@ controller.setElectionList = async (req, res, next) => {
   try {
 
     await connection.beginTransaction(); // START TRANSACTION
-    const [data] = await connection.query('INSERT INTO election(admin_id, name, start_dt, end_dt, start_preview, end_preview, flag, noption, extension, voteflag) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [id, name, tStart_dt, tEnd_dt, tStart_preview, tEnd_preview, 0, option, extension, 0])
+    const [data] = await connection.query('INSERT INTO election(admin_id, name, start_dt, end_dt, start_preview, end_preview, flag, noption, extension, voteflag, rate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [id, name, tStart_dt, tEnd_dt, tStart_preview, tEnd_preview, 0, option, extension, 0, rate])
     const election = data.insertId
     const excelFile = xlsx.read(file.buffer)
     // @breif 엑셀 파일의 첫번째 시트의 정보를 추출
@@ -108,7 +108,6 @@ controller.setElectionList = async (req, res, next) => {
     // @details 엑셀 파일의 첫번째 시트를 읽어온다.
 
     const jsonData = xlsx.utils.sheet_to_json(firstSheet, { defval: "" });
-    console.log(jsonData)
     let values = [];
     if (jsonData.length === 0) {
       connection.release()
@@ -157,13 +156,13 @@ controller.setElectionList = async (req, res, next) => {
 
 controller.putElectionList = async (req, res, next) => {
   const { id } = req.decoded
-  const { index, name, start_dt, end_dt, start_preview, end_preview, option, extension } = req.body
+  const { index, name, start_dt, end_dt, start_preview, end_preview, option, extension, rate } = req.body
   const tStart_dt = new Date(start_dt).toLocaleString('ko-KR', { hour12: false })
   const tEnd_dt = new Date(end_dt).toLocaleString('ko-KR', { hour12: false })
   const tStart_preview = new Date(start_preview).toLocaleString('ko-KR', { hour12: false })
   const tEnd_preview = new Date(end_preview).toLocaleString('ko-KR', { hour12: false })
-
   const file = req.files
+
   let connection = await pool.getConnection(async conn => conn)
   try {
 
@@ -187,7 +186,7 @@ controller.putElectionList = async (req, res, next) => {
     }
 
     await connection.beginTransaction(); // START TRANSACTION
-    await connection.query('UPDATE election SET name=?, start_dt=?, end_dt=?, start_preview=?, end_preview=?, noption=?, extension=?  WHERE admin_id=? AND id=?', [name, tStart_dt, tEnd_dt, tStart_preview, tEnd_preview, option, extension, id, index])
+    await connection.query('UPDATE election SET name=?, start_dt=?, end_dt=?, start_preview=?, end_preview=?, noption=?, extension=?, rate=?  WHERE admin_id=? AND id=?', [name, tStart_dt, tEnd_dt, tStart_preview, tEnd_preview, option, extension, rate, id, index])
     const election = index
 
     if (file != undefined && file.length != 0) {
@@ -311,6 +310,11 @@ controller.getDetailsCandidate = async (req, res, next) => {
   const { id } = req.decoded
   const { candidate } = req.params
   try {
+    const [[check]] = await pool.query('SELECT * FROM election, candidate WHERE election.id = candidate.election_id AND candidate.id = ? AND election.admin_id = ?', [candidate, id])
+    if (check == undefined) {
+      return res.json(Results.onFailure("잘못된 정보 입니다. 고객센터에 문의 바랍니다"))
+    }
+
     const [[data]] = await pool.query('SELECT candidate.*, voter.username FROM candidate, voter WHERE voter.id = candidate.voter_id AND candidate.id = ?', [candidate])
 
     return res.json(Results.onSuccess(data))
@@ -512,5 +516,6 @@ controller.getCandidateList = async (req, res, next) => {
     return res.json(Results.onFailure("고객센터에 문의 바랍니다"))
   }
 }
+
 
 module.exports = controller;

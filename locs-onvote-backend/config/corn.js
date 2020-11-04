@@ -1,8 +1,9 @@
-var cron = require('node-cron');
+const cron = require('node-cron');
 const pool = require("../database");
 const logger = require('./logger');
+const axios = require('axios');
 
-if (process.env.NODE_APP_INSTANCE === 0) {
+if (process.env.NODE_APP_INSTANCE === "0") {
     cron.schedule('*/1 * * * *', async () => {
         // 선거 시작 제어
         let connection = await pool.getConnection(async conn => conn)
@@ -26,6 +27,33 @@ if (process.env.NODE_APP_INSTANCE === 0) {
                             await connection.query('UPDATE election SET flag = 1 WHERE id=?', [data.id])
                             await connection.query('INSERT INTO vote_logs(ip, admin_id, text) VALUES (?,?,?)', [logger.getIP(), data.admin_id, `[${data.name}] 선거가 시작 되었습니다`])
                             logger.info(data.name + "선거 시작 되었습니다.")
+
+                            const [[voter_date]] = await connection.query('SELECT * FROM voter_date WHERE voter_date = ?', [data.start_dt])
+                            if (voter_date == undefined) {
+                                await connection.query(`INSERT INTO voter_date(voter_date) VALUES (?)`, [data.start_dt])
+                                let [voter] = await pool.query(`SELECT MIN(voter.id) AS id, username, REPLACE(phone,"-","") AS phone , MIN(code) AS code, COUNT(phone) as count  FROM voter, election WHERE voter.election_id = election.id AND UNIX_TIMESTAMP(election.start_dt) = ${data.start_dt} GROUP BY voter.phone, voter.username ORDER BY voter.username`)
+                                let test = voter.map(voters => {
+                                    let id_type = "MID"
+                                    let id = "id"
+                                    let auth_key = "32bit 인증키"
+                                    let msg_type = "KAT"
+                                    let callback_key = "1489ASNKNASDI4AISDNALSDN"
+                                    let send_id_receive_number = `${voters.id}|${voters.phone}`
+                                    let template_code = "TML_001"
+                                    let resend = "SMS"
+                                    let content = `[카톡][VOTEON] ${voters.username}님  ${voters.count}건의 선거가 시작되었습니다. https://voteon.kr/user/${voters.code} 로 접속하여 투표하세요.`
+                                    let smg_msg = `[문자][VOTEON] ${voters.username}님  ${voters.count}건의 선거가 시작되었습니다. https://voteon.kr/user/${voters.code} 로 접속하여 투표하세요.`
+                                    return axios.post('http://127.0.0.1:3000/api/users', { id_type, id, auth_key, msg_type, callback_key, send_id_receive_number, template_code, resend, smg_msg, content })
+                                })
+
+                                let promises = await Promise.all(test).then((response) => {
+                                    return response.map(data => {
+                                        return data.data
+                                    })
+                                })
+
+                            }
+
                         }
                     }
                 }
@@ -56,8 +84,34 @@ if (process.env.NODE_APP_INSTANCE === 0) {
                     if (now >= end_dt) {
                         await connection.query('UPDATE election SET flag = 2 WHERE id=?', [data.id])
                         await connection.query('INSERT INTO vote_logs(ip, admin_id, text) VALUES (?,?,?)', [logger.getIP(), data.admin_id, `[${data.name}] 선거가 종료 되었습니다`])
-
                         logger.info("[" + data.name + "]가 선거 종료 되었습니다.")
+
+                        const [[voter_date]] = await connection.query('SELECT * FROM ballot_date WHERE ballot_date = ?', [data.end_dt])
+                        if (voter_date == undefined) {
+                            await connection.query(`INSERT INTO ballot_date(ballot_date) VALUES (?)`, [data.end_dt])
+                            let [voter] = await pool.query(`SELECT voter.username, voter.phone,  MIN(ballot.code) AS  code FROM  ballot, voter, election WHERE ballot.voter_id = voter.id AND ballot.election_id =election.id AND UNIX_TIMESTAMP(election.end_dt) = ${data.end_dt} GROUP BY voter.username, voter.phone ORDER BY voter.username`)
+                            let test = voter.map(voters => {
+                                let id_type = "MID"
+                                let id = "id"
+                                let auth_key = "32bit 인증키"
+                                let msg_type = "KAT"
+                                let callback_key = "1489ASNKNASDI4AISDNALSDN"
+                                let send_id_receive_number = `${voters.id}|${voters.phone}`
+                                let template_code = "TML_001"
+                                let resend = "SMS"
+                                let content = `[카톡][VOTEON] ${voters.username}님  선거가 완료 되었습니다. 개표확인이 필요합니다. https://voteon.kr/confirm/${voters.code} 로 접속하여 확인하세요.`
+                                let smg_msg = `[문자][VOTEON] ${voters.username}님  선거가 완료 되었습니다. 개표확인이 필요합니다. https://voteon.kr/confirm/${voters.code} 로 접속하여 확인하세요.`
+                                return axios.post('http://127.0.0.1:3000/api/users', { id_type, id, auth_key, msg_type, callback_key, send_id_receive_number, template_code, resend, smg_msg, content })
+                            })
+
+                            let promises = await Promise.all(test).then((response) => {
+                                return response.map(data => {
+                                    return data.data
+                                })
+                            })
+
+                        }
+
                     }
                 }
             }
@@ -73,23 +127,5 @@ if (process.env.NODE_APP_INSTANCE === 0) {
             console.log("에러")
         }
     });
-    // cron.schedule('*/5 * * * *', async () => {
-    //     // 이부분에 스케쥴 될 Data 값이 들어감
-    //     try {
-    //         let [election] = await pool.query('SELECT * FROM election')
-    //         election.map(data => {
-    //             console.log(new Date(data.start_dt).toLocaleString());
-    //         }
-    //         )
-
-
-    //     }
-    //     catch (e) {
-    //         console.log(e)
-    //         console.log("에러")
-    //     }
-    //     console.log("5분마다 살아있다")
-    // });
-
 }
 module.exports = cron;

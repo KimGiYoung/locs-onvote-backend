@@ -23,8 +23,8 @@ controller.getTest = async (req, res, next) => {
       let send_id_receive_number = `${data.id}|${data.phone}`
       let template_code = "TML_001"
       let resend = "SMS"
-      let content = `[카톡][VOTEON] ${data.username}님  ${data.count}건의 선거가 시작되었습니다. http://211.236.48.215:3000/voter/${data.code} 로 접속하여 투표하세요.`
-      let smg_msg = `[문자][VOTEON] ${data.username}님  ${data.count}건의 선거가 시작되었습니다. http://211.236.48.215:3000/voter/${data.code} 로 접속하여 투표하세요.`
+      let content = `[카톡][VOTEON] ${data.username}님  ${data.count}건의 선거가 시작되었습니다. https://voteon.kr/voter/${data.code} 로 접속하여 투표하세요.`
+      let smg_msg = `[문자][VOTEON] ${data.username}님  ${data.count}건의 선거가 시작되었습니다. https://voteon.kr/voter/${data.code} 로 접속하여 투표하세요.`
       return axios.post('http://127.0.0.1:3000/api/users', { id_type, id, auth_key, msg_type, callback_key, send_id_receive_number, template_code, resend, smg_msg, content })
     })
 
@@ -212,5 +212,40 @@ controller.TokenReissue = async (req, res, next) => {
     return res.json(Results.onFailure("재발행 토큰 에러"))
   }
 }
+
+controller.isAdminElectionCheck = async (req, res, next) => {
+  const { id } = req.decoded
+  const { election } = req.params
+  try {
+    const [[data]] = await pool.query('SELECT * FROM election WHERE id = ? AND admin_id = ?', [election, id])
+    if (data === undefined) {
+      return res.json(Results.onFailure("잘못된 정보 입니다. 고객센터에 문의 바랍니다"))
+    }
+    else {
+      next()
+    }
+  } catch (error) {
+    logger.error(e)
+    return res.json(Results.onFailure("고객센터에 문의 바랍니다"))
+  }
+}
+
+controller.isAdminCandidateCheck = async (req, res, next) => {
+  const { id } = req.decoded
+  const { candidate } = req.params
+  try {
+    const [[data]] = await pool.query('SELECT * FROM election, candidate WHERE election.id = candidate.election_id AND candidate.id = ? AND election.admin_id = ?', [candidate, id])
+    if (data === undefined) {
+      return res.json(Results.onFailure("잘못된 정보 입니다. 고객센터에 문의 바랍니다"))
+    }
+    else {
+      next()
+    }
+  } catch (error) {
+    logger.error(e)
+    return res.json(Results.onFailure("고객센터에 문의 바랍니다"))
+  }
+}
+
 
 module.exports = controller;
