@@ -34,8 +34,8 @@ if (process.env.NODE_APP_INSTANCE === "0") {
                                 let [voter] = await pool.query(`SELECT MIN(voter.id) AS id, username, REPLACE(phone,"-","") AS phone , MIN(code) AS code, COUNT(phone) as count  FROM voter, election WHERE voter.election_id = election.id AND UNIX_TIMESTAMP(election.start_dt) = ${data.start_dt} GROUP BY voter.phone, voter.username ORDER BY voter.username`)
                                 let test = voter.map(voters => {
                                     let id_type = "MID"
-                                    let id = "id"
-                                    let auth_key = "32bit 인증키"
+                                    let id = "locslab"
+                                    let auth_key = "f870b776c6f0412f16dfbb0e707c488a"
                                     let msg_type = "KAT"
                                     let callback_key = "1489ASNKNASDI4AISDNALSDN"
                                     let send_id_receive_number = `${voters.id}|${voters.phone}`
@@ -43,7 +43,7 @@ if (process.env.NODE_APP_INSTANCE === "0") {
                                     let resend = "SMS"
                                     let content = `[카톡][VOTEON] ${voters.username}님  ${voters.count}건의 선거가 시작되었습니다. https://voteon.kr/user/${voters.code} 로 접속하여 투표하세요.`
                                     let smg_msg = `[문자][VOTEON] ${voters.username}님  ${voters.count}건의 선거가 시작되었습니다. https://voteon.kr/user/${voters.code} 로 접속하여 투표하세요.`
-                                    return axios.post('http://127.0.0.1:3000/api/users', { id_type, id, auth_key, msg_type, callback_key, send_id_receive_number, template_code, resend, smg_msg, content })
+                                    return axios.post('https://ums.dreamline.co.kr/api/send_kkt.php', { id_type, id, auth_key, msg_type, callback_key, send_id_receive_number, template_code, resend, smg_msg, content })
                                 })
 
                                 let promises = await Promise.all(test).then((response) => {
@@ -92,8 +92,8 @@ if (process.env.NODE_APP_INSTANCE === "0") {
                             let [voter] = await pool.query(`SELECT voter.username, voter.phone,  MIN(ballot.code) AS  code FROM  ballot, voter, election WHERE ballot.voter_id = voter.id AND ballot.election_id =election.id AND UNIX_TIMESTAMP(election.end_dt) = ${data.end_dt} GROUP BY voter.username, voter.phone ORDER BY voter.username`)
                             let test = voter.map(voters => {
                                 let id_type = "MID"
-                                let id = "id"
-                                let auth_key = "32bit 인증키"
+                                let id = "locslab"
+                                let auth_key = "f870b776c6f0412f16dfbb0e707c488a"
                                 let msg_type = "KAT"
                                 let callback_key = "1489ASNKNASDI4AISDNALSDN"
                                 let send_id_receive_number = `${voters.id}|${voters.phone}`
@@ -101,7 +101,7 @@ if (process.env.NODE_APP_INSTANCE === "0") {
                                 let resend = "SMS"
                                 let content = `[카톡][VOTEON] ${voters.username}님  선거가 완료 되었습니다. 개표확인이 필요합니다. https://voteon.kr/confirm/${voters.code} 로 접속하여 확인하세요.`
                                 let smg_msg = `[문자][VOTEON] ${voters.username}님  선거가 완료 되었습니다. 개표확인이 필요합니다. https://voteon.kr/confirm/${voters.code} 로 접속하여 확인하세요.`
-                                return axios.post('http://127.0.0.1:3000/api/users', { id_type, id, auth_key, msg_type, callback_key, send_id_receive_number, template_code, resend, smg_msg, content })
+                                return axios.post('https://ums.dreamline.co.kr/api/send_kkt.php', { id_type, id, auth_key, msg_type, callback_key, send_id_receive_number, template_code, resend, smg_msg, content })
                             })
 
                             let promises = await Promise.all(test).then((response) => {
